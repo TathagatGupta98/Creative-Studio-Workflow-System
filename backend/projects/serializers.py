@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Task, Tag, Comment
+from .models import Project, Task, Tag, Comment, Attachment
 
 class CommentSerializer(serializers.ModelSerializer):
     author_username = serializers.ReadOnlyField(source="author.username")
@@ -15,6 +15,17 @@ class CommentSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+class AttachmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attachment
+        fields = [
+            "id",
+            "task",
+            "name",
+            "url",
+            "created_at",
+        ]
+
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to_username = serializers.ReadOnlyField(source="assigned_to.username")
@@ -26,6 +37,8 @@ class TaskSerializer(serializers.ModelSerializer):
     )
 
     comments = CommentSerializer(many=True, read_only=True)
+
+    attachments = AttachmentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Task
@@ -43,6 +56,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "priority",
             "tags",
             "comments",
+            "attachments",
         ]
 
 
