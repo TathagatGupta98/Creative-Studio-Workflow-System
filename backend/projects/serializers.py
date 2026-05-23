@@ -1,9 +1,15 @@
 from rest_framework import serializers
-from .models import Project, Task
+from .models import Project, Task, Tag
 
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to_username = serializers.ReadOnlyField(source="assigned_to.username")
+
+    tags = serializers.SlugRelatedField(
+        many=True, 
+        slug_field='name', 
+        queryset=Tag.objects.all()
+    )
 
     class Meta:
         model = Task
@@ -15,9 +21,11 @@ class TaskSerializer(serializers.ModelSerializer):
             "assigned_to",
             "assigned_to_username",
             "status",
-            "due_date",
+            "deadline",
             "created_at",
             "updated_at",
+            "priority",
+            "tags",
         ]
 
 

@@ -44,14 +44,19 @@ class Task(models.Model):
         blank=True,
         related_name="assigned_tasks",
     )
-    
+
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="TODO")
-    due_date = models.DateField(null=True, blank=True)
+    deadline = models.DateField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default="MEDIUM")
-    deadline = models.DateField(null=True, blank=True)
-    tags = models.CharField(max_length=255, blank=True)
+    tags = models.ManyToManyField("Tag", blank=True, related_name="tasks")
 
     def __str__(self):
         return f"{self.project.title} - {self.title}"
+    
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
