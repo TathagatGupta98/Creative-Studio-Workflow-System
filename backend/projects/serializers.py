@@ -1,5 +1,19 @@
 from rest_framework import serializers
-from .models import Project, Task, Tag
+from .models import Project, Task, Tag, Comment
+
+class CommentSerializer(serializers.ModelSerializer):
+    author_username = serializers.ReadOnlyField(source="author.username")
+
+    class Meta:
+        model = Comment
+        fields = [
+            "id",
+            "task",
+            "author",
+            "author_username",
+            "content",
+            "created_at",
+        ]
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -10,6 +24,8 @@ class TaskSerializer(serializers.ModelSerializer):
         slug_field='name', 
         queryset=Tag.objects.all()
     )
+
+    comments = CommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Task
@@ -26,6 +42,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "updated_at",
             "priority",
             "tags",
+            "comments",
         ]
 
 
