@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { FolderKanban, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { FolderKanban, CheckCircle2, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import CreateProjectModal from '../components/CreateProjectModal';
 
 export default function Dashboard() {
@@ -44,6 +44,20 @@ export default function Dashboard() {
   useEffect(() => {
     fetchDashboardData();
   }, []);
+
+  const handleDeleteProject = async (projectId, projectTitle) => {
+    const confirmed = window.confirm(
+      `Delete "${projectTitle}" and all its tasks, comments, attachments, and notifications?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/projects/${projectId}/`);
+      fetchDashboardData();
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+  };
 
   if (loading) return <div className="animate-pulse">Loading...</div>;
 
@@ -92,13 +106,23 @@ export default function Dashboard() {
                     <h3 className="font-medium text-slate-900">{project.title}</h3>
                     <p className="text-sm text-slate-500">{project.tasks?.length || 0} tasks</p>
                   </div>
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    project.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' :
-                    project.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' :
-                    'bg-slate-100 text-slate-700'
-                  }`}>
-                    {project.status.replace('_', ' ')}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      project.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' :
+                      project.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' :
+                      'bg-slate-100 text-slate-700'
+                    }`}>
+                      {project.status.replace('_', ' ')}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteProject(project.id, project.title)}
+                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                      aria-label={`Delete ${project.title}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (

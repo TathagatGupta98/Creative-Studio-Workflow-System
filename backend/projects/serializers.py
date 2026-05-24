@@ -75,12 +75,12 @@ class TagListField(serializers.SlugRelatedField):
         return tag
 
 class TaskSerializer(serializers.ModelSerializer):
-    assigned_to = serializers.PrimaryKeyRelatedField(
+    assignees = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(),
+        many=True,
         required=True,
-        allow_null=False,
     )
-    assigned_to_username = serializers.ReadOnlyField(source="assigned_to.username")
+    assignees_details = ProjectMemberSerializer(source="assignees", many=True, read_only=True)
 
     tags = TagListField(
         many=True,
@@ -96,6 +96,11 @@ class TaskSerializer(serializers.ModelSerializer):
 
     notifications = NotificationSerializer(many=True, read_only=True)
 
+    def validate_assignees(self, value):
+        if not value:
+            raise serializers.ValidationError("At least one assignee is required.")
+        return value
+
     class Meta:
         model = Task
         fields = [
@@ -103,8 +108,8 @@ class TaskSerializer(serializers.ModelSerializer):
             "project",
             "title",
             "description",
-            "assigned_to",
-            "assigned_to_username",
+            "assignees",
+            "assignees_details",
             "status",
             "deadline",
             "created_at",

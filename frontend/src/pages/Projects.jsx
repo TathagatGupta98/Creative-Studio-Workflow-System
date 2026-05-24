@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import { Plus, Search, Filter, MoreVertical, Calendar } from 'lucide-react';
+import { Plus, Search, Filter, MoreVertical, Calendar, Trash2 } from 'lucide-react';
 import CreateProjectModal from '../components/CreateProjectModal';
 
 export default function Projects() {
@@ -12,6 +12,20 @@ export default function Projects() {
   useEffect(() => {
     fetchProjects();
   }, []);
+
+  const handleDeleteProject = async (projectId, projectTitle) => {
+    const confirmed = window.confirm(
+      `Delete "${projectTitle}" and all its tasks, comments, attachments, and notifications?`
+    );
+    if (!confirmed) return;
+
+    try {
+      await api.delete(`/projects/${projectId}/`);
+      fetchProjects();
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -72,9 +86,19 @@ export default function Projects() {
                 }`}>
                   {project.status.replace('_', ' ')}
                 </span>
-                <button className="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreVertical size={18} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button className="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreVertical size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteProject(project.id, project.title)}
+                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    aria-label={`Delete ${project.title}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
               <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
                 {project.title}

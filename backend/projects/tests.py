@@ -62,14 +62,15 @@ class ModelTests(TestCase):
         task = Task.objects.create(
             project=project,
             title="Design Logo",
-            assigned_to=self.designer,
             status="DRAFT",
             priority="HIGH"
         )
+        task.assignees.add(self.designer)
         task.tags.add(tag)
         
         self.assertEqual(task.status, "DRAFT")
-        self.assertEqual(task.assigned_to, self.designer)
+        self.assertEqual(task.assignees.count(), 1)
+        self.assertEqual(task.assignees.first(), self.designer)
         self.assertEqual(task.tags.count(), 1)
         
         # Update status
@@ -80,6 +81,7 @@ class ModelTests(TestCase):
     def test_comments_and_attachments(self):
         project = Project.objects.create(title="P1", owner=self.admin_user, studio=self.studio)
         task = Task.objects.create(project=project, title="T1")
+        task.assignees.add(self.admin_user)
         
         comment = Comment.objects.create(
             task=task,
@@ -99,6 +101,7 @@ class ModelTests(TestCase):
     def test_notifications(self):
         project = Project.objects.create(title="P1", owner=self.admin_user, studio=self.studio)
         task = Task.objects.create(project=project, title="T1")
+        task.assignees.add(self.designer)
         
         notification = Notification.objects.create(
             user=self.designer,
