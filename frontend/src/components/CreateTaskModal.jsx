@@ -7,6 +7,7 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [error, setError] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -21,36 +22,18 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [projRes, tasksRes] = await Promise.all([
-          api.get('/projects/'),
-          api.get('/projects/tasks/')
-        ]);
-        
-        setProjects(projRes.data);
-        
-        // Discover users from existing tasks + current user
-        const discoveredUsers = [];
-        const userMap = new Map();
-        
-        if (currentUser) {
-          userMap.set(currentUser.id, currentUser.username);
-          discoveredUsers.push({ id: currentUser.id, username: currentUser.username });
-        }
-        
-        tasksRes.data.forEach(task => {
-          if (task.assigned_to && !userMap.has(task.assigned_to)) {
-            userMap.set(task.assigned_to, task.assigned_to_username);
-            discoveredUsers.push({ id: task.assigned_to, username: task.assigned_to_username });
-          }
-        });
-        
-        setUsers(discoveredUsers);
-        
-        if (!formData.project && projRes.data.length > 0) {
-          setFormData(prev => ({ ...prev, project: projRes.data[0].id }));
+        setError('');
+        const projRes = await api.get('/projects/');
+        const projectList = Array.isArray(projRes.data) ? projRes.data : [];
+
+        setProjects(projectList);
+
+        if (!formData.project && projectList.length > 0) {
+          setFormData(prev => ({ ...prev, project: projectList[0].id }));
         }
       } catch (err) {
         console.error('Failed to fetch modal data:', err);
+        setError('Failed to load project or user data.');
       } finally {
         setFetching(false);
       }
@@ -58,9 +41,48 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     fetchData();
   }, [currentUser]);
 
+  useEffect(() => {
+    const selectedProject = projects.find(
+      (project) => String(project.id) === String(formData.project)
+    );
+    const members = selectedProject?.members_details || [];
+    const availableUsers = members.length > 0
+      ? members
+      : currentUser
+        ? [{ id: currentUser.id, username: currentUser.username }]
+        : [];
+
+    setUsers(availableUsers);
+
+    if (
+      formData.assigned_to &&
+      !availableUsers.some((member) => String(member.id) === String(formData.assigned_to))
+    ) {
+      setFormData((prev) => ({ ...prev, assigned_to: '' }));
+    }
+  }, [projects, formData.project, currentUser]);
+
+  const getErrorMessage = (err) => {
+    const data = err?.response?.data;
+    if (!data) return 'Failed to create task.';
+    if (typeof data === 'string') return data;
+    if (data.detail) return data.detail;
+
+    const entries = Object.entries(data);
+    if (entries.length === 0) return 'Failed to create task.';
+
+    return entries
+      .map(([key, value]) => {
+        const message = Array.isArray(value) ? value.join(' ') : value;
+        return `${key}: ${message}`;
+      })
+      .join(' | ');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
     try {
       const payload = {
         ...formData,
@@ -75,6 +97,7 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
       onClose();
     } catch (err) {
       console.error('Failed to create task:', err);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -132,6 +155,11 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
                 <option value="">Unassigned</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
               </select>
+              {users.length === 0 && (
+                <p className="text-xs text-slate-500 mt-2">
+                  Add members to the project to assign tasks.
+                </p>
+              )}
             </div>
           </div>
 
@@ -170,6 +198,12 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
               placeholder="Task details..."
             />
           </div>
+
+          {error && (
+            <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-4 py-2 rounded-xl text-sm font-medium">
+              {error}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">

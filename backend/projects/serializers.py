@@ -1,5 +1,8 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Project, Task, Tag, Comment, Attachment, Notification
+
+User = get_user_model()
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -51,18 +54,30 @@ class NotificationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["user", "task"]
 
+class ProjectMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+        ]
+
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to_username = serializers.ReadOnlyField(source="assigned_to.username")
 
     tags = serializers.SlugRelatedField(
-        many=True, 
-        slug_field='name', 
-        queryset=Tag.objects.all()
+        many=True,
+        slug_field='name',
+        queryset=Tag.objects.all(),
+        required=False,
+        allow_empty=True,
     )
 
     comments = CommentSerializer(many=True, read_only=True)
 
     attachments = AttachmentSerializer(many=True, read_only=True)
+
+    notifications = NotificationSerializer(many=True, read_only=True)
 
     class Meta:
         model = Task
@@ -88,6 +103,12 @@ class TaskSerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     owner = serializers.ReadOnlyField(source="owner.username")
     tasks = TaskSerializer(many=True, read_only=True)
+    members = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=User.objects.all(),
+        required=False,
+    )
+    members_details = ProjectMemberSerializer(source="members", many=True, read_only=True)
 
     class Meta:
         model = Project
@@ -97,6 +118,8 @@ class ProjectSerializer(serializers.ModelSerializer):
             "description",
             "studio",
             "owner",
+            "members",
+            "members_details",
             "status",
             "tasks",
             "created_at",

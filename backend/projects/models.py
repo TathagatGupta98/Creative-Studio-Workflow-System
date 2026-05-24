@@ -14,6 +14,11 @@ class Project(models.Model):
     description = models.TextField(blank=True)
     studio = models.ForeignKey("users.Studio", on_delete=models.CASCADE, related_name="projects", null=True, blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="projects")
+    members = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name="member_projects",
+        blank=True,
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="DRAFT")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -21,6 +21,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(password=password, **validated_data)
         return user
 
+class UserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
 class UserSerializer(serializers.ModelSerializer):
     studio_details = StudioSerializer(source='studio', read_only=True)
     
