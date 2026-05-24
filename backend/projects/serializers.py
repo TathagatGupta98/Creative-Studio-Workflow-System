@@ -22,6 +22,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "content",
             "created_at",
         ]
+        read_only_fields = ["author"]
 
 class AttachmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,6 +49,7 @@ class NotificationSerializer(serializers.ModelSerializer):
             "is_read",
             "created_at",
         ]
+        read_only_fields = ["user", "task"]
 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_to_username = serializers.ReadOnlyField(source="assigned_to.username")
@@ -93,6 +95,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "description",
+            "studio",
             "owner",
             "status",
             "tasks",

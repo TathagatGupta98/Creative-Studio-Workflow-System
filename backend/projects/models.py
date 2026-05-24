@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class Project(models.Model):
@@ -12,7 +12,8 @@ class Project(models.Model):
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="projects")
+    studio = models.ForeignKey("users.Studio", on_delete=models.CASCADE, related_name="projects", null=True, blank=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="projects")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="DRAFT")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -23,10 +24,11 @@ class Project(models.Model):
 
 class Task(models.Model):
     STATUS_CHOICES = [
-        ("TODO", "To Do"),
-        ("IN_PROGRESS", "In Progress"),
+        ("DRAFT", "Draft"),
         ("REVIEW", "Review"),
-        ("DONE", "Done"),
+        ("REVISION", "Revision"),
+        ("APPROVED", "Approved"),
+        ("COMPLETED", "Completed"),
     ]
     PRIORITY_CHOICES = [
         ("LOW", "Low"),
@@ -38,7 +40,7 @@ class Task(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     assigned_to = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -64,7 +66,7 @@ class Tag(models.Model):
     
 class Comment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="comments")
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="comments")
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -81,7 +83,7 @@ class Attachment(models.Model):
         return f"Attachment for {self.task.title}"
 
 class Notification(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="notifications")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="notifications")
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
