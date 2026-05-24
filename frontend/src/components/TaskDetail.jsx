@@ -156,12 +156,20 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                 </select>
               </div>
               <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assignee</span>
-                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
-                  <div className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">
-                    {task.assigned_to_username?.[0]?.toUpperCase() || '?'}
-                  </div>
-                  <span className="text-sm font-medium text-slate-700">{task.assigned_to_username || 'Unassigned'}</span>
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assignees</span>
+                <div className="flex flex-wrap gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+                  {task.assignees_details?.length ? (
+                    task.assignees_details.map((user) => (
+                      <span key={user.id} className="flex items-center gap-2 px-2 py-1 bg-white rounded-full border border-slate-200 text-xs font-semibold text-slate-700">
+                        <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">
+                          {user.username?.[0]?.toUpperCase() || '?'}
+                        </span>
+                        {user.username}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm font-medium text-slate-500">Unassigned</span>
+                  )}
                 </div>
               </div>
               <div className="space-y-1">

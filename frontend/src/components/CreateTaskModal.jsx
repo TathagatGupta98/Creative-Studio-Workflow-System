@@ -14,7 +14,7 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     title: '',
     description: '',
     project: initialProjectId || '',
-    assigned_to: '',
+    assignees: [],
     priority: 'MEDIUM',
     status: 'DRAFT',
     deadline: ''
@@ -55,15 +55,18 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
 
     setUsers(availableUsers);
 
-    if (
-      formData.assigned_to &&
-      !availableUsers.some((member) => String(member.id) === String(formData.assigned_to))
-    ) {
-      setFormData((prev) => ({ ...prev, assigned_to: '' }));
-    }
+    const filteredAssignees = formData.assignees.filter((assigneeId) =>
+      availableUsers.some((member) => String(member.id) === String(assigneeId))
+    );
 
-    if (!formData.assigned_to && availableUsers.length > 0) {
-      setFormData((prev) => ({ ...prev, assigned_to: String(availableUsers[0].id) }));
+    const nextAssignees = filteredAssignees.length > 0
+      ? filteredAssignees
+      : availableUsers.length > 0
+        ? [String(availableUsers[0].id)]
+        : [];
+
+    if (nextAssignees.join(',') !== formData.assignees.join(',')) {
+      setFormData((prev) => ({ ...prev, assignees: nextAssignees }));
     }
   }, [projects, formData.project, currentUser]);
 
@@ -89,6 +92,12 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     setLoading(true);
     setError('');
     try {
+      if (formData.assignees.length === 0) {
+        setError('Select at least one assignee.');
+        setLoading(false);
+        return;
+      }
+
       const tags = tagsInput
         .split(',')
         .map((tag) => tag.trim())
@@ -97,7 +106,7 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
       const payload = {
         ...formData,
         project: formData.project ? Number(formData.project) : formData.project,
-        assigned_to: Number(formData.assigned_to),
+        assignees: formData.assignees.map((assigneeId) => Number(assigneeId)),
         deadline: formData.deadline || null,
         tags,
       };
@@ -111,6 +120,15 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleAssignee = (assigneeId) => {
+    setFormData((prev) => {
+      const assignees = prev.assignees.includes(assigneeId)
+        ? prev.assignees.filter((id) => id !== assigneeId)
+        : [...prev.assignees, assigneeId];
+      return { ...prev, assignees };
+    });
   };
 
   if (fetching) return null;
@@ -155,22 +173,26 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
             </div>
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                <User size={14} /> Assignee
+                <User size={14} /> Assignees
               </label>
-              <select
-                value={formData.assigned_to}
-                onChange={(e) => setFormData({...formData, assigned_to: e.target.value})}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-                required
-              >
-                <option value="" disabled>Select assignee</option>
-                {users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
-              </select>
-              {users.length === 0 && (
-                <p className="text-xs text-slate-500 mt-2">
-                  Add members to the project to assign tasks.
-                </p>
-              )}
+              <div className="border border-slate-200 rounded-xl px-3 py-2 text-sm max-h-40 overflow-y-auto space-y-2">
+                {users.map((user) => (
+                  <label key={user.id} className="flex items-center gap-2 text-slate-700">
+                    <input
+                      type="checkbox"
+                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      checked={formData.assignees.includes(String(user.id))}
+                      onChange={() => toggleAssignee(String(user.id))}
+                    />
+                    <span>{user.username}</span>
+                  </label>
+                ))}
+                {users.length === 0 && (
+                  <p className="text-xs text-slate-500">
+                    Add members to the project to assign tasks.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 

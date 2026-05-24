@@ -61,6 +61,13 @@ export default function Tasks() {
     }
   };
 
+  const getAssigneeLabel = (task) => {
+    const names = task.assignees_details?.map((user) => user.username) || [];
+    if (names.length === 0) return 'Unassigned';
+    if (names.length <= 2) return names.join(', ');
+    return `${names.slice(0, 2).join(', ')} +${names.length - 2}`;
+  };
+
   if (loading) return <div className="animate-pulse">Loading tasks...</div>;
 
   return (
@@ -111,7 +118,7 @@ export default function Tasks() {
                   <div className="flex flex-wrap items-center gap-y-2 gap-x-4">
                     <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                       <User size={14} />
-                      {task.assigned_to_username || 'Unassigned'}
+                      {getAssigneeLabel(task)}
                     </div>
                     {task.deadline && (
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
