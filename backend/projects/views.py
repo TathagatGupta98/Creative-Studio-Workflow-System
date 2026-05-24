@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, mixins
+from rest_framework import viewsets, permissions, mixins, filters
 from .models import Project, Task, Comment, Attachment, Notification
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, AttachmentSerializer, NotificationSerializer
 
@@ -23,6 +23,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     queryset = Task.objects.all()
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    # /api/tasks/?search=design
+    filter_backends = [filters.DjangoFilterBackend]
+    search_fields = ['project', 'description']
 
     def get_queryset(self):
         # Users see tasks from projects in their studio
