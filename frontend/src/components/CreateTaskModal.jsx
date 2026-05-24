@@ -62,7 +62,15 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     e.preventDefault();
     setLoading(true);
     try {
-      await api.post('/projects/tasks/', formData);
+      const payload = {
+        ...formData,
+        project: formData.project ? Number(formData.project) : formData.project,
+        assigned_to: formData.assigned_to ? Number(formData.assigned_to) : null,
+        deadline: formData.deadline || null,
+        tags: [],
+      };
+
+      await api.post('/projects/tasks/', payload);
       onSuccess();
       onClose();
     } catch (err) {

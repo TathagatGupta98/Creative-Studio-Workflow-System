@@ -28,8 +28,13 @@ export function AuthProvider({ children }) {
     navigate('/login')
   }
 
+  const register = async (payload) => {
+    await api.post('/users/register/', payload)
+    await login(payload.username, payload.password)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   )

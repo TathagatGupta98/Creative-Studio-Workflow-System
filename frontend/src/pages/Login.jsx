@@ -3,20 +3,45 @@ import { useAuth } from '../context/AuthContext';
 import { LogIn, ShieldCheck, Globe, User } from 'lucide-react';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
+  const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isSignUp = mode === 'signup';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await login(username, password);
+      if (isSignUp) {
+        if (password !== confirmPassword) {
+          setError('Passwords do not match.');
+          return;
+        }
+
+        const payload = { username, password };
+        if (email) payload.email = email;
+        if (firstName) payload.first_name = firstName;
+        if (lastName) payload.last_name = lastName;
+
+        await register(payload);
+      } else {
+        await login(username, password);
+      }
     } catch (err) {
-      setError('Invalid username or password. Please try again.');
+      setError(
+        isSignUp
+          ? 'Could not create account. Please check your details.'
+          : 'Invalid username or password. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -36,7 +61,67 @@ export default function Login() {
 
         {/* Login Card */}
         <div className="bg-white p-8 rounded-2xl shadow-xl shadow-slate-200 border border-slate-100">
+          <div className="flex items-center gap-2 mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                setMode('login');
+                setError('');
+              }}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                !isSignUp
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Sign In
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode('signup');
+                setError('');
+              }}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                isSignUp
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Create Account
+            </button>
+          </div>
           <form onSubmit={handleSubmit} className="space-y-5">
+            {isSignUp && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    First name
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Jane"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    Last name
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                 Username
@@ -51,12 +136,26 @@ export default function Login() {
               />
             </div>
 
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jane@studio.com"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                />
+              </div>
+            )}
+
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-sm font-semibold text-slate-700">
                   Password
                 </label>
-                <a href="#" className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">Forgot?</a>
               </div>
               <input
                 type="password"
@@ -67,6 +166,22 @@ export default function Login() {
                 required
               />
             </div>
+
+            {isSignUp && (
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                  Confirm password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat your password"
+                  className="w-full border border-slate-200 rounded-xl px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  required
+                />
+              </div>
+            )}
 
             {error && (
               <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-4 py-3 rounded-xl text-sm font-medium">
@@ -83,37 +198,26 @@ export default function Login() {
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Authenticating...
+                  {isSignUp ? 'Creating account...' : 'Authenticating...'}
                 </span>
-              ) : 'Sign In to Dashboard'}
+              ) : isSignUp ? 'Create Account' : 'Sign In to Dashboard'}
             </button>
           </form>
 
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100"></div>
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-3 text-slate-400 font-bold tracking-wider">Or continue with</span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                <User size={18} />
-                SSO
-              </button>
-              <button className="flex items-center justify-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-                <Globe size={18} />
-                Public
-              </button>
-            </div>
-          </div>
         </div>
 
         <p className="text-center mt-8 text-sm text-slate-500 font-medium">
-          Don't have an account? <a href="#" className="text-indigo-600 font-bold hover:text-indigo-700">Contact Admin</a>
+          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(isSignUp ? 'login' : 'signup');
+              setError('');
+            }}
+            className="text-indigo-600 font-bold hover:text-indigo-700"
+          >
+            {isSignUp ? 'Sign in' : 'Create one'}
+          </button>
         </p>
       </div>
     </div>
