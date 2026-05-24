@@ -62,10 +62,27 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
             "username",
         ]
 
+class TagListField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        if not isinstance(data, str):
+            self.fail('invalid')
+
+        name = data.strip()
+        if not name:
+            self.fail('invalid')
+
+        tag, _ = Tag.objects.get_or_create(name=name)
+        return tag
+
 class TaskSerializer(serializers.ModelSerializer):
+    assigned_to = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        required=True,
+        allow_null=False,
+    )
     assigned_to_username = serializers.ReadOnlyField(source="assigned_to.username")
 
-    tags = serializers.SlugRelatedField(
+    tags = TagListField(
         many=True,
         slug_field='name',
         queryset=Tag.objects.all(),

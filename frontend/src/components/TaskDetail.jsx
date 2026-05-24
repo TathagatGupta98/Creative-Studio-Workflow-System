@@ -16,6 +16,11 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
+  const [tagInput, setTagInput] = useState('');
+  const [tagError, setTagError] = useState('');
+  const [attachmentName, setAttachmentName] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [attachmentError, setAttachmentError] = useState('');
 
   useEffect(() => {
     if (taskId) {
@@ -57,6 +62,55 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
       fetchTask();
     } catch (error) {
       console.error('Failed to add comment:', error);
+    }
+  };
+
+  const handleAddTags = async (e) => {
+    e.preventDefault();
+    const inputTags = tagInput
+      .split(',')
+      .map((tag) => tag.trim())
+      .filter(Boolean);
+
+    if (inputTags.length === 0) return;
+
+    const nextTags = Array.from(new Set([...(task.tags || []), ...inputTags]));
+
+    try {
+      setTagError('');
+      await api.patch(`/projects/tasks/${taskId}/`, { tags: nextTags });
+      setTagInput('');
+      fetchTask();
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error('Failed to add tags:', error);
+      setTagError('Could not add tags.');
+    }
+  };
+
+  const handleAddAttachment = async (e) => {
+    e.preventDefault();
+    const name = attachmentName.trim();
+    const url = attachmentUrl.trim();
+
+    if (!name || !url) {
+      setAttachmentError('Attachment name and URL are required.');
+      return;
+    }
+
+    try {
+      setAttachmentError('');
+      await api.post('/projects/attachments/', {
+        task: taskId,
+        name,
+        url,
+      });
+      setAttachmentName('');
+      setAttachmentUrl('');
+      fetchTask();
+    } catch (error) {
+      console.error('Failed to add attachment:', error);
+      setAttachmentError('Could not add attachment.');
     }
   };
 
@@ -120,12 +174,36 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
               <div className="space-y-1">
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tags</span>
                 <div className="flex flex-wrap gap-1.5 pt-1">
-                  {task.tags?.map(tag => (
-                    <span key={tag} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold uppercase">
-                      {tag}
-                    </span>
-                  )) || <span className="text-xs text-slate-400">None</span>}
+                  {task.tags?.length ? (
+                    task.tags.map(tag => (
+                      <span key={tag} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold uppercase">
+                        {tag}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-400">None</span>
+                  )}
                 </div>
+                <form onSubmit={handleAddTags} className="flex flex-col gap-2 pt-3">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      placeholder="Add tags (comma separated)"
+                      className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  {tagError && (
+                    <span className="text-xs text-rose-600 font-medium">{tagError}</span>
+                  )}
+                </form>
               </div>
             </div>
 
@@ -146,9 +224,35 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                     </div>
                   </a>
                 ))}
-                <button className="flex items-center justify-center gap-2 p-3 border-2 border-dashed border-slate-200 rounded-xl text-sm font-medium text-slate-500 hover:border-indigo-400 hover:text-indigo-600 transition-all">
-                  Upload file
-                </button>
+                <form onSubmit={handleAddAttachment} className="flex flex-col gap-2 p-3 border-2 border-dashed border-slate-200 rounded-xl">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={attachmentName}
+                      onChange={(e) => setAttachmentName(e.target.value)}
+                      placeholder="Attachment name"
+                      className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                    <input
+                      type="url"
+                      value={attachmentUrl}
+                      onChange={(e) => setAttachmentUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="submit"
+                      className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700"
+                    >
+                      Add attachment
+                    </button>
+                    {attachmentError && (
+                      <span className="text-xs text-rose-600 font-medium">{attachmentError}</span>
+                    )}
+                  </div>
+                </form>
               </div>
             </div>
 

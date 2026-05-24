@@ -8,6 +8,7 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
   
   const [formData, setFormData] = useState({
     title: '',
@@ -60,6 +61,10 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     ) {
       setFormData((prev) => ({ ...prev, assigned_to: '' }));
     }
+
+    if (!formData.assigned_to && availableUsers.length > 0) {
+      setFormData((prev) => ({ ...prev, assigned_to: String(availableUsers[0].id) }));
+    }
   }, [projects, formData.project, currentUser]);
 
   const getErrorMessage = (err) => {
@@ -84,12 +89,17 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     setLoading(true);
     setError('');
     try {
+      const tags = tagsInput
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean);
+
       const payload = {
         ...formData,
         project: formData.project ? Number(formData.project) : formData.project,
-        assigned_to: formData.assigned_to ? Number(formData.assigned_to) : null,
+        assigned_to: Number(formData.assigned_to),
         deadline: formData.deadline || null,
-        tags: [],
+        tags,
       };
 
       await api.post('/projects/tasks/', payload);
@@ -151,8 +161,9 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
                 value={formData.assigned_to}
                 onChange={(e) => setFormData({...formData, assigned_to: e.target.value})}
                 className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                required
               >
-                <option value="">Unassigned</option>
+                <option value="" disabled>Select assignee</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.username}</option>)}
               </select>
               {users.length === 0 && (
@@ -197,6 +208,18 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
               className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-h-[80px]"
               placeholder="Task details..."
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">Tags</label>
+            <input
+              type="text"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="e.g., branding, homepage, urgent"
+            />
+            <p className="text-xs text-slate-500 mt-2">Separate tags with commas.</p>
           </div>
 
           {error && (
