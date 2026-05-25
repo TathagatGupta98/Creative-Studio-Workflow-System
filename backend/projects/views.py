@@ -83,9 +83,24 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         comment = serializer.save(author=self.request.user)
         task = comment.task
-        recipients = task.assignees.exclude(id=self.request.user.id)
-        if recipients.exists():
+        
+        # Get all people to notify: assignees + parent comment author
+        recipient_ids = set(task.assignees.values_list('id', flat=True))
+        if comment.parent:
+            recipient_ids.add(comment.parent.author.id)
+        
+        # Exclude the person who made the comment
+        recipient_ids.discard(self.request.user.id)
+        
+        if recipient_ids:
             message = f'New comment on "{task.title}" by {self.request.user.username}.'
+            if comment.parent:
+                message = f'{self.request.user.username} replied to a comment on "{task.title}".'
+            
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            recipients = User.objects.filter(id__in=recipient_ids)
+            
             notifications = [
                 Notification(user=user, task=task, message=message)
                 for user in recipients

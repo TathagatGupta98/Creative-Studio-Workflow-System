@@ -18,6 +18,7 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
   const [attachmentName, setAttachmentName] = useState('');
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [attachmentError, setAttachmentError] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
 
   const fetchTask = useCallback(async () => {
     setLoading(true);
@@ -58,14 +59,50 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
     try {
       await api.post('/projects/comments/', {
         task: taskId,
-        content: newComment
+        content: newComment,
+        parent: replyTo ? replyTo.id : null
       });
       setNewComment('');
+      setReplyTo(null);
       fetchTask();
     } catch (error) {
       console.error('Failed to add comment:', error);
     }
   };
+
+  const CommentItem = ({ comment, depth = 0 }) => (
+    <div className={`space-y-3 ${depth > 0 ? 'mt-3' : ''}`}>
+      <div className="flex gap-3">
+        <div className={`w-8 h-8 neo-border ${depth % 2 === 0 ? 'bg-[var(--neo-mint)]' : 'bg-[var(--neo-yellow)]'} flex items-center justify-center text-[10px] font-bold shrink-0`}>
+          {comment.author_username?.[0]?.toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <span className="neo-label-sm font-bold text-[var(--neo-text)]">{comment.author_username}</span>
+            <span className="text-[10px] text-[var(--neo-text-muted)]">
+              {new Date(comment.created_at).toLocaleString()}
+            </span>
+            <button 
+              onClick={() => setReplyTo(comment)}
+              className="text-[10px] font-bold uppercase hover:underline text-[var(--neo-blue)] ml-auto"
+            >
+              Reply
+            </button>
+          </div>
+          <div className="neo-surface-muted neo-border px-3 py-1.5 inline-block max-w-full">
+            <p className="neo-body-sm break-words">{comment.content}</p>
+          </div>
+        </div>
+      </div>
+      {comment.replies && comment.replies.length > 0 && (
+        <div className="ml-4 md:ml-6 border-l-2 border-[var(--neo-border)] pl-3 md:pl-4">
+          {comment.replies.map((reply) => (
+            <CommentItem key={reply.id} comment={reply} depth={depth + 1} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   const handleAddTags = async (e) => {
     e.preventDefault();
@@ -324,11 +361,23 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                 </h3>
                 <div className="space-y-6">
                   <form onSubmit={handleAddComment} className="relative">
+                    {replyTo && (
+                      <div className="mb-2 flex items-center justify-between bg-[var(--neo-surface-muted)] neo-border p-2 text-[10px]">
+                        <span className="font-bold">Replying to {replyTo.author_username}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setReplyTo(null)}
+                          className="neo-icon-btn p-1"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
                     <textarea
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Write a comment..."
-                      className="neo-input neo-radius-none w-full min-h-[120px] resize-none bg-[var(--neo-surface-muted)]"
+                      placeholder={replyTo ? `Reply to ${replyTo.author_username}...` : "Write a comment..."}
+                      className="neo-input neo-radius-none w-full min-h-[100px] resize-none bg-[var(--neo-surface-muted)]"
                     />
                     <div className="absolute bottom-3 right-3">
                       <button
@@ -342,25 +391,16 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                     </div>
                   </form>
 
-                  <div className="space-y-4 pb-4">
-                    {task.comments?.map((comment) => (
-                      <div key={comment.id} className="flex gap-3">
-                        <div className="w-9 h-9 neo-border bg-[var(--neo-mint)] flex items-center justify-center text-xs font-bold shrink-0">
-                          {comment.author_username?.[0]?.toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="neo-label-md text-[var(--neo-text)]">{comment.author_username}</span>
-                            <span className="neo-label-sm text-[var(--neo-text-muted)]">
-                              {new Date(comment.created_at).toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="neo-surface-muted neo-border px-4 py-2.5 inline-block max-w-full">
-                            <p className="neo-body-md break-words">{comment.content}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="space-y-4 pb-4 max-h-[500px] overflow-y-auto pr-2">
+                    {task.comments?.length > 0 ? (
+                      task.comments.map((comment) => (
+                        <CommentItem key={comment.id} comment={comment} />
+                      ))
+                    ) : (
+                      <p className="neo-label-sm text-[var(--neo-text-muted)] text-center py-4">
+                        No comments yet. Start the conversation!
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

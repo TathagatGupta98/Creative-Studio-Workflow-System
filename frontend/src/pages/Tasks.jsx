@@ -203,10 +203,10 @@ export default function Tasks() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {task.comments?.length > 0 && (
+                {task.comments_count > 0 && (
                   <div className="flex items-center gap-2 neo-label-sm text-[var(--neo-text-muted)]">
                     <MessageSquare size={14} />
-                    {task.comments.length}
+                    {task.comments_count}
                   </div>
                 )}
                 {task.attachments?.length > 0 && (

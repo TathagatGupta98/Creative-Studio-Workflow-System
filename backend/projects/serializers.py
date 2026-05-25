@@ -14,6 +14,7 @@ class TagSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author_username = serializers.ReadOnlyField(source="author.username")
+    replies = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
@@ -23,9 +24,16 @@ class CommentSerializer(serializers.ModelSerializer):
             "author",
             "author_username",
             "content",
+            "parent",
+            "replies",
             "created_at",
         ]
         read_only_fields = ["author"]
+
+    def get_replies(self, obj):
+        if obj.replies.exists():
+            return CommentSerializer(obj.replies.all(), many=True).data
+        return []
 
 class AttachmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -90,11 +98,17 @@ class TaskSerializer(serializers.ModelSerializer):
         allow_empty=True,
     )
 
-    comments = CommentSerializer(many=True, read_only=True)
+    comments = serializers.SerializerMethodField()
+    comments_count = serializers.IntegerField(source="comments.count", read_only=True)
 
     attachments = AttachmentSerializer(many=True, read_only=True)
 
     notifications = NotificationSerializer(many=True, read_only=True)
+
+    def get_comments(self, obj):
+        # Only return top-level comments; replies are nested within them
+        top_level_comments = obj.comments.filter(parent__isnull=True)
+        return CommentSerializer(top_level_comments, many=True).data
 
     def validate_assignees(self, value):
         if not value:
@@ -117,6 +131,7 @@ class TaskSerializer(serializers.ModelSerializer):
             "priority",
             "tags",
             "comments",
+            "comments_count",
             "attachments",
             "notifications",
         ]

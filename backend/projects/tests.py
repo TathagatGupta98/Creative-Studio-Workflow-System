@@ -136,3 +136,64 @@ class StudioAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         project = Project.objects.get(title="New S2 Project")
         self.assertEqual(project.studio, self.studio2)
+
+class CommentThreadingTests(APITestCase):
+    def setUp(self):
+        self.studio = Studio.objects.create(name="Studio 1")
+        self.user = User.objects.create_user(username="u1", password="p1", studio=self.studio)
+        self.project = Project.objects.create(title="P1", owner=self.user, studio=self.studio)
+        self.task = Task.objects.create(project=self.project, title="T1")
+        self.client.force_authenticate(user=self.user)
+
+    def test_threaded_comments(self):
+        # Create a top-level comment
+        response = self.client.post("/api/projects/comments/", {
+            "task": self.task.id,
+            "content": "Top level comment"
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        parent_id = response.data["id"]
+
+        # Create a reply
+        response = self.client.post("/api/projects/comments/", {
+            "task": self.task.id,
+            "content": "Reply to comment",
+            "parent": parent_id
+        })
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        reply_id = response.data["id"]
+        self.assertEqual(response.data["parent"], parent_id)
+
+        # Check task serializer
+        response = self.client.get(f"/api/projects/tasks/{self.task.id}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # Should have 2 total comments but only 1 top-level comment in the 'comments' list
+        self.assertEqual(response.data["comments_count"], 2)
+        self.assertEqual(len(response.data["comments"]), 1)
+        
+        # The top-level comment should have 1 reply
+        top_level_comment = response.data["comments"][0]
+        self.assertEqual(top_level_comment["id"], parent_id)
+        self.assertEqual(len(top_level_comment["replies"]), 1)
+        self.assertEqual(top_level_comment["replies"][0]["id"], reply_id)
+
+    def test_notification_on_reply(self):
+        # Create another user to reply to
+        other_user = User.objects.create_user(username="u2", password="p2", studio=self.studio)
+        
+        # u1 creates a comment
+        comment = Comment.objects.create(task=self.task, author=self.user, content="Original")
+        
+        # u2 replies to u1's comment
+        self.client.force_authenticate(user=other_user)
+        self.client.post("/api/projects/comments/", {
+            "task": self.task.id,
+            "content": "Reply by u2",
+            "parent": comment.id
+        })
+        
+        # u1 should have a notification
+        self.assertEqual(self.user.notifications.count(), 1)
+        notification = self.user.notifications.first()
+        self.assertIn("u2 replied to a comment", notification.message)
