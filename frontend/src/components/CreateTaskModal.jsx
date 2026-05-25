@@ -4,7 +4,6 @@ import api from '../api/axios';
 
 export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, currentUser }) {
   const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
@@ -20,6 +19,28 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
     deadline: ''
   });
 
+  const getAvailableUsersForProject = (project, previousAssignees = []) => {
+    const members = project?.members_details || [];
+    const availableUsers = members.length > 0
+      ? members
+      : currentUser
+        ? [{ id: currentUser.id, username: currentUser.username }]
+        : [];
+
+    const filteredAssignees = previousAssignees.filter((assigneeId) =>
+      availableUsers.some((member) => String(member.id) === String(assigneeId))
+    );
+
+    return {
+      availableUsers,
+      assignees: filteredAssignees.length > 0
+        ? filteredAssignees
+        : availableUsers.length > 0
+          ? [String(availableUsers[0].id)]
+          : [],
+    };
+  };
+
   useEffect(() => {
     async function fetchData() {
       try {
@@ -29,8 +50,17 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
 
         setProjects(projectList);
 
-        if (!formData.project && projectList.length > 0) {
-          setFormData(prev => ({ ...prev, project: projectList[0].id }));
+        const selectedProject = projectList.find(
+          (project) => String(project.id) === String(formData.project)
+        ) || projectList[0];
+
+        if (selectedProject) {
+          const { assignees } = getAvailableUsersForProject(selectedProject, formData.assignees);
+          setFormData((prev) => ({
+            ...prev,
+            project: prev.project || selectedProject.id,
+            assignees,
+          }));
         }
       } catch (err) {
         console.error('Failed to fetch modal data:', err);
@@ -40,35 +70,13 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
       }
     }
     fetchData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  useEffect(() => {
-    const selectedProject = projects.find(
-      (project) => String(project.id) === String(formData.project)
-    );
-    const members = selectedProject?.members_details || [];
-    const availableUsers = members.length > 0
-      ? members
-      : currentUser
-        ? [{ id: currentUser.id, username: currentUser.username }]
-        : [];
-
-    setUsers(availableUsers);
-
-    const filteredAssignees = formData.assignees.filter((assigneeId) =>
-      availableUsers.some((member) => String(member.id) === String(assigneeId))
-    );
-
-    const nextAssignees = filteredAssignees.length > 0
-      ? filteredAssignees
-      : availableUsers.length > 0
-        ? [String(availableUsers[0].id)]
-        : [];
-
-    if (nextAssignees.join(',') !== formData.assignees.join(',')) {
-      setFormData((prev) => ({ ...prev, assignees: nextAssignees }));
-    }
-  }, [projects, formData.project, currentUser]);
+  const selectedProject = projects.find(
+    (project) => String(project.id) === String(formData.project)
+  );
+  const users = getAvailableUsersForProject(selectedProject, formData.assignees).availableUsers;
 
   const getErrorMessage = (err) => {
     const data = err?.response?.data;
@@ -134,37 +142,49 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
   if (fetching) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h3 className="font-bold text-slate-900">Create New Task</h3>
-          <button onClick={onClose} className="p-1 hover:bg-white rounded-md transition-colors border border-transparent hover:border-slate-200">
-            <X size={20} className="text-slate-500" />
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#1c1c0f]/40 backdrop-blur-sm p-4">
+      <div className="neo-surface neo-border-thick neo-shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="px-6 py-4 border-b-2 border-[var(--neo-border)] flex items-center justify-between bg-[var(--neo-surface-muted)]">
+          <h3 className="neo-title-md">Create New Task</h3>
+          <button onClick={onClose} className="neo-icon-btn neo-radius-none p-2">
+            <X size={18} />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Task Title</label>
+            <label className="neo-label-md block mb-2">Task Title</label>
             <input
               type="text"
               required
               value={formData.title}
               onChange={(e) => setFormData({...formData, title: e.target.value})}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="neo-input neo-radius-none w-full"
               placeholder="What needs to be done?"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
+              <label className="neo-label-md block mb-2 flex items-center gap-2">
                 <Folder size={14} /> Project
               </label>
               <select
                 value={formData.project}
-                onChange={(e) => setFormData({...formData, project: e.target.value})}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                onChange={(e) => {
+                  const nextProjectId = e.target.value;
+                  const nextProject = projects.find(
+                    (project) => String(project.id) === String(nextProjectId)
+                  );
+                  const { assignees } = getAvailableUsersForProject(nextProject, formData.assignees);
+
+                  setFormData((prev) => ({
+                    ...prev,
+                    project: nextProjectId,
+                    assignees,
+                  }));
+                }}
+                className="neo-input neo-radius-none w-full bg-[var(--neo-surface)]"
                 required
               >
                 <option value="">Select Project</option>
@@ -172,15 +192,15 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
+              <label className="neo-label-md block mb-2 flex items-center gap-2">
                 <User size={14} /> Assignees
               </label>
-              <div className="border border-slate-200 rounded-xl px-3 py-2 text-sm max-h-40 overflow-y-auto space-y-2">
+              <div className="neo-border neo-radius-none px-3 py-2 text-sm max-h-40 overflow-y-auto space-y-2 bg-[var(--neo-surface)]">
                 {users.map((user) => (
-                  <label key={user.id} className="flex items-center gap-2 text-slate-700">
+                  <label key={user.id} className="flex items-center gap-2 neo-body-md">
                     <input
                       type="checkbox"
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      className="h-4 w-4 border-2 border-[var(--neo-border)] accent-[var(--neo-blue)]"
                       checked={formData.assignees.includes(String(user.id))}
                       onChange={() => toggleAssignee(String(user.id))}
                     />
@@ -188,7 +208,7 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
                   </label>
                 ))}
                 {users.length === 0 && (
-                  <p className="text-xs text-slate-500">
+                  <p className="neo-label-sm text-[var(--neo-text-muted)]">
                     Add members to the project to assign tasks.
                   </p>
                 )}
@@ -196,13 +216,13 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Priority</label>
+              <label className="neo-label-md block mb-2">Priority</label>
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
+                className="neo-input neo-radius-none w-full bg-[var(--neo-surface)]"
               >
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
@@ -210,51 +230,59 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
+              <label className="neo-label-md block mb-2 flex items-center gap-2">
                 <Calendar size={14} /> Deadline
               </label>
               <input
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => setFormData({...formData, deadline: e.target.value})}
-                className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="neo-input neo-radius-none w-full"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+            <label className="neo-label-md block mb-2">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({...formData, description: e.target.value})}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none min-h-[80px]"
+              className="neo-input neo-radius-none w-full min-h-[100px]"
               placeholder="Task details..."
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Tags</label>
+            <label className="neo-label-md block mb-2">Tags</label>
             <input
               type="text"
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="neo-input neo-radius-none w-full"
               placeholder="e.g., branding, homepage, urgent"
             />
-            <p className="text-xs text-slate-500 mt-2">Separate tags with commas.</p>
+            <p className="neo-label-sm text-[var(--neo-text-muted)] mt-2">Separate tags with commas.</p>
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 text-rose-600 bg-rose-50 px-4 py-2 rounded-xl text-sm font-medium">
+            <div className="neo-border neo-shadow px-4 py-3 bg-[var(--neo-red)] text-white neo-body-md">
               {error}
             </div>
           )}
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 neo-btn neo-radius-none px-4 py-2"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={loading} className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-lg transition-all disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 neo-btn neo-btn-secondary neo-radius-none px-4 py-2 disabled:opacity-50"
+            >
               {loading ? 'Creating...' : 'Create Task'}
             </button>
           </div>

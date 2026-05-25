@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -27,11 +27,7 @@ export default function Tasks() {
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const fetchTasks = async () => {
+  const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
       const params = {};
@@ -54,7 +50,13 @@ export default function Tasks() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchTerm, tagFilter]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchTasks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const filteredTasks = tasks.filter(t => 
     statusFilter === 'ALL' ? true : t.status === statusFilter
@@ -71,9 +73,12 @@ export default function Tasks() {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'HIGH': return 'text-rose-600 bg-rose-50';
-      case 'MEDIUM': return 'text-amber-600 bg-amber-50';
-      default: return 'text-slate-600 bg-slate-50';
+      case 'HIGH':
+        return 'bg-[var(--neo-red)] text-white';
+      case 'MEDIUM':
+        return 'bg-[var(--neo-yellow)] text-[var(--neo-text)]';
+      default:
+        return 'bg-[var(--neo-surface-variant)] text-[var(--neo-text)]';
     }
   };
 
@@ -86,57 +91,70 @@ export default function Tasks() {
 
   if (loading) return <div className="animate-pulse">Loading tasks...</div>;
 
+  const statusFilterStyles = {
+    ALL: 'bg-[var(--neo-blue)] text-white',
+    DRAFT: 'bg-[var(--neo-surface)] text-[var(--neo-text)]',
+    REVIEW: 'bg-[var(--neo-yellow)] text-[var(--neo-text)]',
+    REVISION: 'bg-[var(--neo-blue-bright)] text-white',
+    APPROVED: 'bg-[var(--neo-mint)] text-[var(--neo-text)]',
+    COMPLETED: 'bg-[var(--neo-mint)] text-[var(--neo-text)]',
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:flex-1">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
+        <div>
+          <h2 className="neo-title-xl">Tasks Management</h2>
+          <p className="neo-body-lg text-[var(--neo-text-muted)]">Track active work and move fast.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neo-text-muted)]" size={18} />
             <input
               type="text"
               placeholder="Search tasks..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="neo-input neo-radius-none w-full pl-10"
             />
           </div>
-          <div className="relative w-full sm:w-64">
-            <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <div className="relative flex-1 min-w-[200px]">
+            <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neo-text-muted)]" size={18} />
             <input
               type="text"
               placeholder="Filter by tag"
               value={tagFilter}
               onChange={(e) => setTagFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="neo-input neo-radius-none w-full pl-10"
             />
           </div>
           <button
             type="button"
             onClick={fetchTasks}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-all w-full sm:w-auto"
+            className="neo-btn neo-radius-none px-4 py-2 flex items-center gap-2"
           >
             <Search size={16} />
             Search
           </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="neo-btn neo-btn-secondary neo-radius-none px-4 py-2 flex items-center gap-2"
+          >
+            <Plus size={18} />
+            New Task
+          </button>
         </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 rounded-lg text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm transition-all w-full lg:w-auto"
-        >
-          <Plus size={18} />
-          New Task
-        </button>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
-        {['ALL', 'DRAFT', 'REVIEW', 'REVISION', 'APPROVED', 'COMPLETED'].map(status => (
+      <div className="flex flex-wrap items-center gap-3">
+        {['ALL', 'DRAFT', 'REVIEW', 'REVISION', 'APPROVED', 'COMPLETED'].map((status) => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-              statusFilter === status 
-                ? 'bg-slate-900 text-white' 
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+            className={`neo-label-md px-4 py-2 border-2 border-[var(--neo-border)] transition-all ${
+              statusFilter === status
+                ? `neo-shadow ${statusFilterStyles[status] || 'bg-[var(--neo-surface)] text-[var(--neo-text)]'}`
+                : 'bg-[var(--neo-surface)] text-[var(--neo-text)] hover:bg-[var(--neo-surface-high)]'
             }`}
           >
             {status === 'ALL' ? 'All Tasks' : status.replace('_', ' ')}
@@ -144,56 +162,40 @@ export default function Tasks() {
         ))}
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="divide-y divide-slate-100">
-          {filteredTasks.map(task => (
-            <div 
-              key={task.id} 
-              onClick={() => setSelectedTaskId(task.id)}
-              className="p-4 hover:bg-slate-50 transition-colors group cursor-pointer"
-            >
-              <div className="flex items-start gap-4">
+      <div className="flex flex-col gap-4">
+        {filteredTasks.map((task) => (
+          <div
+            key={task.id}
+            onClick={() => setSelectedTaskId(task.id)}
+            className="neo-surface neo-border-thick neo-shadow neo-shadow-hover px-4 py-4 cursor-pointer"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex items-start gap-3 flex-1">
                 <div className="mt-1">{getStatusIcon(task.status)}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-slate-900 truncate pr-4">{task.title}</h3>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${getPriorityColor(task.priority)}`}>
-                      {task.priority}
-                    </span>
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="neo-title-md">{task.title}</h3>
+                    <span className={`neo-chip ${getPriorityColor(task.priority)}`}>{task.priority}</span>
                   </div>
-                  
-                  <div className="flex flex-wrap items-center gap-y-2 gap-x-4">
-                    <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                  <div className="flex flex-wrap items-center gap-3 mt-2 neo-label-sm text-[var(--neo-text-muted)]">
+                    <div className="flex items-center gap-2">
                       <User size={14} />
                       {getAssigneeLabel(task)}
                     </div>
                     {task.deadline && (
-                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                        <AlertCircle size={14} className={new Date(task.deadline) < new Date() ? 'text-rose-500' : ''} />
+                      <div className="flex items-center gap-2">
+                        <AlertCircle
+                          size={14}
+                          className={new Date(task.deadline) < new Date() ? 'text-[var(--neo-red)]' : ''}
+                        />
                         {new Date(task.deadline).toLocaleDateString()}
                       </div>
                     )}
-                    <div className="flex items-center gap-3 ml-auto">
-                      {task.comments?.length > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-slate-400">
-                          <MessageSquare size={14} />
-                          {task.comments.length}
-                        </div>
-                      )}
-                      {task.attachments?.length > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-slate-400">
-                          <Paperclip size={14} />
-                          {task.attachments.length}
-                        </div>
-                      )}
-                      <ChevronRight size={18} className="text-slate-300 group-hover:text-slate-400 group-hover:translate-x-0.5 transition-all" />
-                    </div>
                   </div>
-                  
                   {task.tags?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mt-3">
-                      {task.tags.map(tag => (
-                        <span key={tag} className="flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-medium">
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {task.tags.map((tag) => (
+                        <span key={tag} className="neo-tag">
                           <TagIcon size={10} />
                           {tag}
                         </span>
@@ -202,14 +204,29 @@ export default function Tasks() {
                   )}
                 </div>
               </div>
+              <div className="flex items-center gap-3">
+                {task.comments?.length > 0 && (
+                  <div className="flex items-center gap-2 neo-label-sm text-[var(--neo-text-muted)]">
+                    <MessageSquare size={14} />
+                    {task.comments.length}
+                  </div>
+                )}
+                {task.attachments?.length > 0 && (
+                  <div className="flex items-center gap-2 neo-label-sm text-[var(--neo-text-muted)]">
+                    <Paperclip size={14} />
+                    {task.attachments.length}
+                  </div>
+                )}
+                <ChevronRight size={18} className="text-[var(--neo-text-muted)]" />
+              </div>
             </div>
-          ))}
-          {filteredTasks.length === 0 && (
-            <div className="py-20 text-center">
-              <p className="text-slate-500">No tasks found in this category.</p>
-            </div>
-          )}
-        </div>
+          </div>
+        ))}
+        {filteredTasks.length === 0 && (
+          <div className="neo-surface neo-border neo-shadow px-6 py-12 text-center">
+            <p className="neo-body-md text-[var(--neo-text-muted)]">No tasks found in this category.</p>
+          </div>
+        )}
       </div>
 
       {selectedTaskId && (

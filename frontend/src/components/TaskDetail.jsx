@@ -1,14 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { 
   X, 
-  Clock, 
-  User, 
-  Tag as TagIcon, 
   Paperclip, 
   MessageSquare, 
   Send,
   Calendar,
-  AlertCircle
 } from 'lucide-react';
 import api from '../api/axios';
 
@@ -22,13 +18,7 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
   const [attachmentUrl, setAttachmentUrl] = useState('');
   const [attachmentError, setAttachmentError] = useState('');
 
-  useEffect(() => {
-    if (taskId) {
-      fetchTask();
-    }
-  }, [taskId]);
-
-  const fetchTask = async () => {
+  const fetchTask = useCallback(async () => {
     try {
       const response = await api.get(`/projects/tasks/${taskId}/`);
       setTask(response.data);
@@ -37,7 +27,14 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId]);
+
+  useEffect(() => {
+    if (taskId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void fetchTask();
+    }
+  }, [taskId, fetchTask]);
 
   const handleStatusChange = async (newStatus) => {
     try {
@@ -114,39 +111,52 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
     }
   };
 
+  const priorityClass = {
+    HIGH: 'neo-chip--overdue',
+    MEDIUM: 'neo-chip--review',
+    LOW: 'neo-chip--draft',
+  }[task.priority] || 'neo-chip--draft';
+
+  const statusClass = {
+    DRAFT: 'neo-chip--draft',
+    REVIEW: 'neo-chip--review',
+    REVISION: 'neo-chip--active',
+    APPROVED: 'neo-chip--completed',
+    COMPLETED: 'neo-chip--completed',
+  }[task.status] || 'neo-chip--draft';
+
   if (loading) return null;
   if (!task) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-end bg-slate-900/40 backdrop-blur-sm">
-      <div className="w-full max-w-2xl h-full bg-white shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div className="flex items-center gap-2">
-            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-              task.priority === 'HIGH' ? 'bg-rose-100 text-rose-700' : 
-              task.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
-            }`}>
-              {task.priority} Priority
-            </span>
+    <div className="fixed inset-0 z-[60] flex items-stretch justify-end bg-[var(--neo-border)]/40 backdrop-blur-sm">
+      <div className="w-full max-w-2xl h-full neo-surface neo-border-thick shadow-[12px_0px_0px_0px_#1c1c0f] flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="px-6 py-4 border-b-2 border-[var(--neo-border)] flex items-center justify-between bg-[var(--neo-surface-muted)]">
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className={`neo-chip ${priorityClass}`}>{task.priority} Priority</span>
+            <span className={`neo-chip ${statusClass}`}>{task.status.replace('_', ' ')}</span>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white rounded-lg transition-colors border border-transparent hover:border-slate-200">
-            <X size={20} className="text-slate-500" />
+          <button onClick={onClose} className="neo-icon-btn neo-radius-none p-2" aria-label="Close task details">
+            <X size={18} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="p-8">
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">{task.title}</h2>
-            <p className="text-slate-600 mb-8 whitespace-pre-wrap">{task.description || 'No description provided.'}</p>
+          <div className="p-6 md:p-8 space-y-8">
+            <section className="neo-surface-muted neo-border-thick neo-shadow p-5">
+              <h2 className="neo-title-lg mb-2">{task.title}</h2>
+              <p className="neo-body-md text-[var(--neo-text-muted)] whitespace-pre-wrap">
+                {task.description || 'No description provided.'}
+              </p>
+            </section>
 
-            <div className="grid grid-cols-2 gap-6 mb-8">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Status</span>
-                <select 
-                  value={task.status} 
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">
+                <span className="neo-label-md text-[var(--neo-text-muted)]">Status</span>
+                <select
+                  value={task.status}
                   onChange={(e) => handleStatusChange(e.target.value)}
-                  className="block w-full text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="neo-input neo-radius-none w-full bg-[var(--neo-surface)]"
                 >
                   <option value="DRAFT">Draft</option>
                   <option value="REVIEW">Review</option>
@@ -155,162 +165,162 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                   <option value="COMPLETED">Completed</option>
                 </select>
               </div>
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Assignees</span>
-                <div className="flex flex-wrap gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100">
+
+              <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">
+                <span className="neo-label-md text-[var(--neo-text-muted)]">Assignees</span>
+                <div className="flex flex-wrap gap-2">
                   {task.assignees_details?.length ? (
                     task.assignees_details.map((user) => (
-                      <span key={user.id} className="flex items-center gap-2 px-2 py-1 bg-white rounded-full border border-slate-200 text-xs font-semibold text-slate-700">
-                        <span className="w-5 h-5 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-[10px] font-bold">
+                      <span key={user.id} className="neo-tag bg-[var(--neo-surface-muted)]">
+                        <span className="w-5 h-5 neo-border bg-[var(--neo-yellow)] flex items-center justify-center text-[10px] font-bold">
                           {user.username?.[0]?.toUpperCase() || '?'}
                         </span>
                         {user.username}
                       </span>
                     ))
                   ) : (
-                    <span className="text-sm font-medium text-slate-500">Unassigned</span>
+                    <span className="neo-label-sm text-[var(--neo-text-muted)]">Unassigned</span>
                   )}
                 </div>
               </div>
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deadline</span>
-                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-100 text-sm font-medium text-slate-700">
-                  <Calendar size={14} className="text-slate-400" />
+
+              <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">
+                <span className="neo-label-md text-[var(--neo-text-muted)]">Deadline</span>
+                <div className="flex items-center gap-2 neo-body-md">
+                  <Calendar size={14} />
                   {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}
                 </div>
               </div>
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tags</span>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+
+              <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">
+                <span className="neo-label-md text-[var(--neo-text-muted)]">Tags</span>
+                <div className="flex flex-wrap gap-2">
                   {task.tags?.length ? (
-                    task.tags.map(tag => (
-                      <span key={tag} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-[10px] font-bold uppercase">
+                    task.tags.map((tag) => (
+                      <span key={tag} className="neo-tag">
                         {tag}
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs text-slate-400">None</span>
+                    <span className="neo-label-sm text-[var(--neo-text-muted)]">None</span>
                   )}
                 </div>
-                <form onSubmit={handleAddTags} className="flex flex-col gap-2 pt-3">
+                <form onSubmit={handleAddTags} className="space-y-2">
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
                       value={tagInput}
                       onChange={(e) => setTagInput(e.target.value)}
                       placeholder="Add tags (comma separated)"
-                      className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="neo-input neo-radius-none flex-1"
                     />
-                    <button
-                      type="submit"
-                      className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700"
-                    >
+                    <button type="submit" className="neo-btn neo-btn-secondary neo-radius-none px-3 py-2">
                       Add
                     </button>
                   </div>
-                  {tagError && (
-                    <span className="text-xs text-rose-600 font-medium">{tagError}</span>
-                  )}
+                  {tagError && <span className="neo-label-sm text-[var(--neo-red)]">{tagError}</span>}
                 </form>
               </div>
-            </div>
+            </section>
 
-            {/* Attachments */}
-            <div className="mb-8">
-              <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <Paperclip size={16} className="text-slate-400" />
-                Attachments ({task.attachments?.length || 0})
-              </h3>
-              <div className="grid grid-cols-1 gap-2">
-                {task.attachments?.map(file => (
-                  <a key={file.id} href={file.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50/30 transition-all group">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-100 rounded-lg text-slate-500 group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors">
-                        <Paperclip size={16} />
-                      </div>
-                      <span className="text-sm font-medium text-slate-700">{file.name}</span>
-                    </div>
-                  </a>
-                ))}
-                <form onSubmit={handleAddAttachment} className="flex flex-col gap-2 p-3 border-2 border-dashed border-slate-200 rounded-xl">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      value={attachmentName}
-                      onChange={(e) => setAttachmentName(e.target.value)}
-                      placeholder="Attachment name"
-                      className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                    <input
-                      type="url"
-                      value={attachmentUrl}
-                      onChange={(e) => setAttachmentUrl(e.target.value)}
-                      placeholder="https://..."
-                      className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <button
-                      type="submit"
-                      className="px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700"
+            <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="neo-surface neo-border-thick neo-shadow p-4">
+                <h3 className="neo-title-md mb-4 flex items-center gap-2">
+                  <Paperclip size={16} />
+                  Attachments ({task.attachments?.length || 0})
+                </h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {task.attachments?.map((file) => (
+                    <a
+                      key={file.id}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="neo-surface-muted neo-border neo-shadow-hover px-3 py-3 flex items-center justify-between transition-all"
                     >
-                      Add attachment
-                    </button>
-                    {attachmentError && (
-                      <span className="text-xs text-rose-600 font-medium">{attachmentError}</span>
-                    )}
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            {/* Comments */}
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <MessageSquare size={16} className="text-slate-400" />
-                Activity
-              </h3>
-              <div className="space-y-6">
-                <form onSubmit={handleAddComment} className="relative">
-                  <textarea
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Write a comment..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all resize-none min-h-[100px]"
-                  />
-                  <div className="absolute bottom-3 right-3">
-                    <button 
-                      type="submit"
-                      disabled={!newComment.trim()}
-                      className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:bg-slate-400"
-                    >
-                      <Send size={16} />
-                    </button>
-                  </div>
-                </form>
-
-                <div className="space-y-6 pb-10">
-                  {task.comments?.map(comment => (
-                    <div key={comment.id} className="flex gap-3">
-                      <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-xs font-bold text-slate-600 shrink-0">
-                        {comment.author_username?.[0]?.toUpperCase()}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-bold text-slate-900">{comment.author_username}</span>
-                          <span className="text-[10px] font-medium text-slate-400">
-                            {new Date(comment.created_at).toLocaleString()}
-                          </span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 neo-border bg-[var(--neo-yellow)] flex items-center justify-center">
+                          <Paperclip size={14} />
                         </div>
-                        <div className="text-sm text-slate-600 bg-slate-50 px-4 py-2.5 rounded-2xl inline-block">
-                          {comment.content}
-                        </div>
+                        <span className="neo-body-md">{file.name}</span>
                       </div>
-                    </div>
+                    </a>
                   ))}
+                  <form onSubmit={handleAddAttachment} className="neo-border neo-border-dashed p-3 space-y-3 bg-[var(--neo-surface)]">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        value={attachmentName}
+                        onChange={(e) => setAttachmentName(e.target.value)}
+                        placeholder="Attachment name"
+                        className="neo-input neo-radius-none"
+                      />
+                      <input
+                        type="url"
+                        value={attachmentUrl}
+                        onChange={(e) => setAttachmentUrl(e.target.value)}
+                        placeholder="https://..."
+                        className="neo-input neo-radius-none"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <button type="submit" className="neo-btn neo-btn-secondary neo-radius-none px-3 py-2">
+                        Add attachment
+                      </button>
+                      {attachmentError && <span className="neo-label-sm text-[var(--neo-red)]">{attachmentError}</span>}
+                    </div>
+                  </form>
                 </div>
               </div>
-            </div>
+
+              <div className="neo-surface neo-border-thick neo-shadow p-4">
+                <h3 className="neo-title-md mb-4 flex items-center gap-2">
+                  <MessageSquare size={16} />
+                  Activity
+                </h3>
+                <div className="space-y-6">
+                  <form onSubmit={handleAddComment} className="relative">
+                    <textarea
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Write a comment..."
+                      className="neo-input neo-radius-none w-full min-h-[120px] resize-none bg-[var(--neo-surface-muted)]"
+                    />
+                    <div className="absolute bottom-3 right-3">
+                      <button
+                        type="submit"
+                        disabled={!newComment.trim()}
+                        className="neo-btn neo-btn-secondary neo-radius-none p-2 disabled:opacity-50"
+                        aria-label="Send comment"
+                      >
+                        <Send size={16} />
+                      </button>
+                    </div>
+                  </form>
+
+                  <div className="space-y-4 pb-4">
+                    {task.comments?.map((comment) => (
+                      <div key={comment.id} className="flex gap-3">
+                        <div className="w-9 h-9 neo-border bg-[var(--neo-mint)] flex items-center justify-center text-xs font-bold shrink-0">
+                          {comment.author_username?.[0]?.toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="neo-label-md text-[var(--neo-text)]">{comment.author_username}</span>
+                            <span className="neo-label-sm text-[var(--neo-text-muted)]">
+                              {new Date(comment.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="neo-surface-muted neo-border px-4 py-2.5 inline-block max-w-full">
+                            <p className="neo-body-md break-words">{comment.content}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </div>

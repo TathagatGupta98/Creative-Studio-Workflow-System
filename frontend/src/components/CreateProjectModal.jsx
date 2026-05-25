@@ -57,52 +57,52 @@ export default function CreateProjectModal({ onClose, onSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <h3 className="font-bold text-slate-900">Create New Project</h3>
-          <button onClick={onClose} className="p-1 hover:bg-white rounded-md transition-colors border border-transparent hover:border-slate-200">
-            <X size={20} className="text-slate-500" />
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-[#1c1c0f]/40 backdrop-blur-sm p-4">
+      <div className="neo-surface neo-border-thick neo-shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+        <div className="px-6 py-4 border-b-2 border-[var(--neo-border)] flex items-center justify-between bg-[var(--neo-surface-muted)]">
+          <h3 className="neo-title-md">Create New Project</h3>
+          <button onClick={onClose} className="neo-icon-btn neo-radius-none p-2">
+            <X size={18} />
           </button>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Project Title</label>
+            <label className="neo-label-md block mb-2">Project Title</label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              className="neo-input neo-radius-none w-full"
               placeholder="e.g., Summer Campaign 2026"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+            <label className="neo-label-md block mb-2">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all min-h-[100px]"
+              className="neo-input neo-radius-none w-full min-h-[110px]"
               placeholder="What is this project about?"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Team Members</label>
-            <div className="border border-slate-200 rounded-xl px-3 py-2 text-sm max-h-40 overflow-y-auto space-y-2">
+            <label className="neo-label-md block mb-2">Team Members</label>
+            <div className="neo-border neo-radius-none px-3 py-2 text-sm max-h-40 overflow-y-auto space-y-2 bg-[var(--neo-surface)]">
               {fetchingUsers && (
-                <p className="text-slate-500">Loading users...</p>
+                <p className="neo-body-md text-[var(--neo-text-muted)]">Loading users...</p>
               )}
               {!fetchingUsers && users.length === 0 && (
-                <p className="text-slate-500">No users available.</p>
+                <p className="neo-body-md text-[var(--neo-text-muted)]">No users available.</p>
               )}
               {!fetchingUsers && users.map((user) => (
-                <label key={user.id} className="flex items-center gap-2 text-slate-700">
+                <label key={user.id} className="flex items-center gap-2 neo-body-md">
                   <input
                     type="checkbox"
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    className="h-4 w-4 border-2 border-[var(--neo-border)] accent-[var(--neo-blue)]"
                     checked={selectedMembers.includes(user.id)}
                     onChange={() => toggleMember(user.id)}
                   />
@@ -110,25 +110,29 @@ export default function CreateProjectModal({ onClose, onSuccess }) {
                 </label>
               ))}
             </div>
-            <p className="text-xs text-slate-500 mt-2">
+            <p className="neo-label-sm text-[var(--neo-text-muted)] mt-2">
               Members added here will appear in the task assignee list.
             </p>
           </div>
 
-          {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
+          {error && (
+            <div className="neo-border neo-shadow px-3 py-2 bg-[var(--neo-red)] text-white neo-body-md">
+              {error}
+            </div>
+          )}
 
           <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-all"
+              className="flex-1 neo-btn neo-radius-none px-4 py-2"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all disabled:opacity-50"
+              className="flex-1 neo-btn neo-btn-secondary neo-radius-none px-4 py-2 disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create Project'}
             </button>

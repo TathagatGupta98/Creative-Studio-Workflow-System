@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
 import { Plus, Search, Filter, MoreVertical, Calendar, Trash2 } from 'lucide-react';
 import CreateProjectModal from '../components/CreateProjectModal';
@@ -8,10 +8,6 @@ export default function Projects() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   const handleDeleteProject = async (projectId, projectTitle) => {
     const confirmed = window.confirm(
@@ -27,7 +23,7 @@ export default function Projects() {
     }
   };
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     try {
       const response = await api.get('/projects/');
       setProjects(Array.isArray(response.data) ? response.data : []);
@@ -37,117 +33,155 @@ export default function Projects() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchProjects();
+  }, [fetchProjects]);
 
   const filteredProjects = projects.filter(p => 
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (p.description && p.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const getStatusLabel = (status) => (status || 'DRAFT').replace('_', ' ');
+  const getStatusClass = (status) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'neo-chip--completed';
+      case 'IN_PROGRESS':
+        return 'neo-chip--active';
+      case 'REVIEW':
+        return 'neo-chip--review';
+      case 'OVERDUE':
+        return 'neo-chip--overdue';
+      default:
+        return 'neo-chip--draft';
+    }
+  };
+
+  const getStatusBar = (status) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'bg-[var(--neo-mint)]';
+      case 'IN_PROGRESS':
+        return 'bg-[var(--neo-blue)]';
+      case 'REVIEW':
+        return 'bg-[var(--neo-yellow)]';
+      case 'OVERDUE':
+        return 'bg-[var(--neo-red)]';
+      default:
+        return 'bg-[var(--neo-surface-variant)]';
+    }
+  };
+
+  const formatDate = (value) => {
+    if (!value) return 'No date';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'No date';
+    return date.toLocaleDateString();
+  };
+
   if (loading) return <div className="animate-pulse">Loading projects...</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="relative flex-1 w-full max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search projects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-          />
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4">
+        <div>
+          <h2 className="neo-title-xl">Projects</h2>
+          <p className="neo-body-lg text-[var(--neo-text-muted)]">
+            Manage your active creative workflows.
+          </p>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neo-text-muted)]" size={18} />
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="neo-input neo-radius-none w-full pl-10"
+            />
+          </div>
+          <button className="neo-btn neo-radius-none px-4 py-2 flex items-center gap-2">
             <Filter size={18} />
             Filters
           </button>
-          <button 
+          <button
             onClick={() => setShowCreateModal(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 rounded-lg text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm shadow-indigo-100 transition-all"
+            className="neo-btn neo-btn-secondary neo-radius-none px-4 py-2 flex items-center gap-2"
           >
             <Plus size={18} />
-            New Project
+            Create Project
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProjects.map(project => (
-          <div key={project.id} className="group bg-white rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all overflow-hidden flex flex-col">
-            <div className="p-5 flex-1">
-              <div className="flex justify-between items-start mb-4">
-                <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                  project.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-700' :
-                  project.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-700' :
-                  'bg-slate-100 text-slate-700'
-                }`}>
-                  {project.status.replace('_', ' ')}
+        {filteredProjects.map((project) => (
+          <div key={project.id} className="neo-border neo-shadow neo-shadow-hover bg-[var(--neo-surface)] flex flex-col">
+            <div className={`h-3 w-full ${getStatusBar(project.status)} border-b-2 border-[var(--neo-border)]`} />
+            <div className="p-5 flex-1 flex flex-col">
+              <div className="flex items-start justify-between mb-4">
+                <span className={`neo-chip ${getStatusClass(project.status)}`}>
+                  {getStatusLabel(project.status)}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button className="text-slate-400 hover:text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <MoreVertical size={18} />
+                  <button className="neo-icon-btn neo-radius-none p-2 text-[var(--neo-text)]">
+                    <MoreVertical size={16} />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDeleteProject(project.id, project.title)}
-                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                    className="neo-icon-btn neo-radius-none p-2 text-[var(--neo-text)] hover:text-white hover:bg-[var(--neo-red)]"
                     aria-label={`Delete ${project.title}`}
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-slate-900 mb-2 group-hover:text-indigo-600 transition-colors">
-                {project.title}
-              </h3>
-              <p className="text-sm text-slate-500 line-clamp-2 mb-6">
+              <h3 className="neo-title-md mb-2">{project.title}</h3>
+              <p className="neo-body-md text-[var(--neo-text-muted)] mb-6 line-clamp-3">
                 {project.description || 'No description provided.'}
               </p>
-              
-              <div className="flex items-center gap-4 text-xs font-medium text-slate-500">
-                <div className="flex items-center gap-1.5">
+
+              <div className="mt-auto flex items-center gap-4 neo-label-sm text-[var(--neo-text-muted)]">
+                <div className="flex items-center gap-2">
                   <Calendar size={14} />
-                  {new Date(project.created_at).toLocaleDateString()}
+                  {formatDate(project.created_at)}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 neo-border bg-[var(--neo-surface-muted)] flex items-center justify-center">
                     {project.tasks?.length || 0}
                   </div>
                   Tasks
                 </div>
               </div>
             </div>
-            
-            <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-              <div className="flex -space-x-2">
-                <div className="w-6 h-6 rounded-full bg-indigo-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-indigo-600">
-                  {project.owner?.[0]?.toUpperCase()}
-                </div>
+
+            <div className="px-5 py-3 border-t-2 border-[var(--neo-border)] bg-[var(--neo-surface-muted)] flex items-center justify-between">
+              <div className="w-8 h-8 neo-border bg-[var(--neo-yellow)] flex items-center justify-center">
+                <span className="neo-label-sm">{project.owner?.[0]?.toUpperCase() || 'U'}</span>
               </div>
-              <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-700">
-                Manage Project →
-              </button>
+              <button className="neo-label-md underline">Manage Project</button>
             </div>
           </div>
         ))}
         {filteredProjects.length === 0 && (
-          <div className="col-span-full py-20 text-center">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FolderKanban size={32} className="text-slate-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900">No projects found</h3>
-            <p className="text-slate-500">Try adjusting your search or create a new project.</p>
+          <div className="col-span-full py-16 text-center neo-surface neo-border neo-shadow">
+            <h3 className="neo-title-md">No projects found</h3>
+            <p className="neo-body-md text-[var(--neo-text-muted)]">
+              Try adjusting your search or create a new project.
+            </p>
           </div>
         )}
       </div>
 
       {showCreateModal && (
-        <CreateProjectModal 
-          onClose={() => setShowCreateModal(false)} 
-          onSuccess={fetchProjects} 
+        <CreateProjectModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={fetchProjects}
         />
       )}
     </div>
