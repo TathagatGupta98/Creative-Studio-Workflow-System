@@ -95,7 +95,6 @@ export default function Projects() {
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
           <div className="relative flex-1 min-w-[220px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--neo-text-muted)]" size={18} />
             <input
               type="text"
               placeholder="Search projects..."
@@ -128,9 +127,7 @@ export default function Projects() {
                   {getStatusLabel(project.status)}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button className="neo-icon-btn neo-radius-none p-2 text-[var(--neo-text)]">
-                    <MoreVertical size={16} />
-                  </button>
+                  
                   <button
                     type="button"
                     onClick={() => handleDeleteProject(project.id, project.title)}
@@ -162,7 +159,7 @@ export default function Projects() {
 
             <div className="px-5 py-3 border-t-2 border-[var(--neo-border)] bg-[var(--neo-surface-muted)] flex items-center justify-between">
               <div className="w-8 h-8 neo-border bg-[var(--neo-yellow)] flex items-center justify-center">
-                <span className="neo-label-sm">{project.owner?.[0]?.toUpperCase() || 'U'}</span>
+                <span className="neo-label-sm">{project.owner?.username?.[0]?.toUpperCase() || 'U'}</span>
               </div>
               <button className="neo-label-md underline">Manage Project</button>
             </div>
