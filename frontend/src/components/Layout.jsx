@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandMark from './BrandMark';
 import { 
   LayoutDashboard, 
   FolderKanban, 
@@ -39,14 +40,12 @@ export default function Layout({ children }) {
           />
           <aside className="absolute left-0 top-0 h-full w-[280px] neo-surface neo-border-thick shadow-[4px_0px_0px_0px_#1c1c0f] flex flex-col">
             <div className="px-6 py-6 neo-divider">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-[var(--neo-mint)] neo-border neo-shadow neo-radius flex items-center justify-center">
-                  <span className="neo-label-md">SF</span>
-                </div>
-                <div>
-                  <div className="neo-title-lg">StudioFlow</div>
-                  <div className="neo-label-sm text-[var(--neo-text-muted)]">Creative Workspace</div>
-                </div>
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <BrandMark className="w-24 h-24 md:w-28 md:h-28" />
+                    <div>
+                      <div className="neo-title-lg leading-none">StudioFlow</div>
+                      <div className="neo-label-sm text-[var(--neo-text-muted)] mt-1">Creative Workspace</div>
+                    </div>
               </div>
             </div>
 
@@ -100,13 +99,11 @@ export default function Layout({ children }) {
       {/* Sidebar for desktop */}
       <aside className="hidden md:flex md:flex-col w-[280px] neo-surface neo-border-thick border-r-4 border-[var(--neo-border)] shadow-[4px_0px_0px_0px_#1c1c0f]">
         <div className="px-6 py-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-[var(--neo-mint)] neo-border neo-shadow neo-radius flex items-center justify-center">
-              <span className="neo-label-md">SF</span>
-            </div>
+          <div className="flex flex-col items-center gap-3 text-center">
+            <BrandMark className="w-24 h-24 md:w-28 md:h-28" />
             <div>
-              <div className="neo-title-lg">StudioFlow</div>
-              <div className="neo-label-sm text-[var(--neo-text-muted)]">Creative Workspace</div>
+              <div className="neo-title-lg leading-none">StudioFlow</div>
+              <div className="neo-label-sm text-[var(--neo-text-muted)] mt-1">Creative Workspace</div>
             </div>
           </div>
         </div>

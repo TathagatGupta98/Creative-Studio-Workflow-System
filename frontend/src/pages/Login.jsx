@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck } from 'lucide-react';
+import BrandMark from '../components/BrandMark';
 
 export default function Login() {
   const { login, register } = useAuth();
@@ -57,9 +58,12 @@ export default function Login() {
       </div>
 
       <div className="relative w-full max-w-md neo-surface neo-border-thick neo-shadow-xl p-8">
-        <div className="text-center mb-8">
-          <h1 className="neo-title-xl">StudioFlow</h1>
-          <p className="neo-label-md text-[var(--neo-text-muted)]">Creative Workspace</p>
+        <div className="text-center mb-8 flex flex-col items-center gap-3">
+          <BrandMark className="w-24 h-24" />
+          <div>
+            <h1 className="neo-title-xl">StudioFlow</h1>
+            <p className="neo-label-md text-[var(--neo-text-muted)]">Creative Workspace</p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 mb-6">

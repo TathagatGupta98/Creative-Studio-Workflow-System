@@ -11,6 +11,7 @@ import api from '../api/axios';
 export default function TaskDetail({ taskId, onClose, onUpdate }) {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [newComment, setNewComment] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [tagError, setTagError] = useState('');
@@ -19,11 +20,15 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
   const [attachmentError, setAttachmentError] = useState('');
 
   const fetchTask = useCallback(async () => {
+    setLoading(true);
+    setError('');
     try {
       const response = await api.get(`/projects/tasks/${taskId}/`);
       setTask(response.data);
     } catch (error) {
       console.error('Failed to fetch task details:', error);
+      setTask(null);
+      setError('Unable to load this task right now.');
     } finally {
       setLoading(false);
     }
@@ -111,6 +116,48 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-stretch justify-end bg-[var(--neo-border)]/40 backdrop-blur-sm">
+        <div className="w-full max-w-2xl h-full neo-surface neo-border-thick shadow-[12px_0px_0px_0px_#1c1c0f] flex flex-col">
+          <div className="px-6 py-4 border-b-2 border-[var(--neo-border)] flex items-center justify-between bg-[var(--neo-surface-muted)]">
+            <span className="neo-chip neo-chip--draft">Loading</span>
+            <button onClick={onClose} className="neo-icon-btn neo-radius-none p-2" aria-label="Close task details">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="neo-surface-muted neo-border-thick neo-shadow p-6 text-center max-w-sm">
+              <p className="neo-title-md">Loading task details</p>
+              <p className="neo-body-md text-[var(--neo-text-muted)] mt-2">Fetching the latest task data.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!task) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-stretch justify-end bg-[var(--neo-border)]/40 backdrop-blur-sm">
+        <div className="w-full max-w-2xl h-full neo-surface neo-border-thick shadow-[12px_0px_0px_0px_#1c1c0f] flex flex-col">
+          <div className="px-6 py-4 border-b-2 border-[var(--neo-border)] flex items-center justify-between bg-[var(--neo-surface-muted)]">
+            <span className="neo-chip neo-chip--overdue">Unavailable</span>
+            <button onClick={onClose} className="neo-icon-btn neo-radius-none p-2" aria-label="Close task details">
+              <X size={18} />
+            </button>
+          </div>
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="neo-surface-muted neo-border-thick neo-shadow p-6 text-center max-w-sm">
+              <p className="neo-title-md">Task unavailable</p>
+              <p className="neo-body-md text-[var(--neo-text-muted)] mt-2">{error || 'This task could not be loaded.'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const priorityClass = {
     HIGH: 'neo-chip--overdue',
     MEDIUM: 'neo-chip--review',
@@ -125,16 +172,13 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
     COMPLETED: 'neo-chip--completed',
   }[task.status] || 'neo-chip--draft';
 
-  if (loading) return null;
-  if (!task) return null;
-
   return (
     <div className="fixed inset-0 z-[60] flex items-stretch justify-end bg-[var(--neo-border)]/40 backdrop-blur-sm">
       <div className="w-full max-w-2xl h-full neo-surface neo-border-thick shadow-[12px_0px_0px_0px_#1c1c0f] flex flex-col animate-in slide-in-from-right duration-300">
         <div className="px-6 py-4 border-b-2 border-[var(--neo-border)] flex items-center justify-between bg-[var(--neo-surface-muted)]">
           <div className="flex items-center gap-3 flex-wrap">
             <span className={`neo-chip ${priorityClass}`}>{task.priority} Priority</span>
-            <span className={`neo-chip ${statusClass}`}>{task.status.replace('_', ' ')}</span>
+            <span className={`neo-chip ${statusClass}`}>{task.status?.replace('_', ' ') || 'UNKNOWN'}</span>
           </div>
           <button onClick={onClose} className="neo-icon-btn neo-radius-none p-2" aria-label="Close task details">
             <X size={18} />
