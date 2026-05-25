@@ -9,12 +9,14 @@ The Creative Studio Workflow System allows multiple studios to operate in isolat
 ## 🛠️ Tech Stack
 
 ### Backend
+
 - **Framework:** Django 6.0 + Django REST Framework (DRF)
 - **Authentication:** JWT (SimpleJWT)
 - **Database:** SQLite (Development) / PostgreSQL (Production ready)
 - **Features:** django-filter for advanced querying, Django CORS headers.
 
 ### Frontend
+
 - **Framework:** React 19 (Vite)
 - **Styling:** Tailwind CSS (v4) with Neo-Brutalist Design System
 - **Icons:** Lucide React
@@ -38,7 +40,8 @@ The Creative Studio Workflow System allows multiple studios to operate in isolat
 
 ## 🎨 Design Philosophy: Neo-Brutalism
 
-This platform rejects the sanitized "SaaS" look in favor of **Neo-Brutality**. 
+This platform rejects the sanitized "SaaS" look in favor of **Neo-Brutality**.
+
 - **Bold Typography:** Montserrat for high-impact headlines and Hanken Grotesk for legibility.
 - **Tactile UI:** Hard shadows (no blurs), thick black borders (2px-4px), and geometric shapes.
 - **Vibrant Palette:** High-saturation primary colors (Yellow, Blue, Red, Mint) set against an off-white surface.
@@ -64,46 +67,68 @@ This platform rejects the sanitized "SaaS" look in favor of **Neo-Brutality**.
 ## ⚙️ Getting Started
 
 ### Prerequisites
+
 - Python 3.10+
 - Node.js 18+
 - npm or yarn
 
 ### Backend Setup
+
 1. Navigate to the backend directory:
+
    ```bash
    cd backend
    ```
+
 2. Create and activate a virtual environment:
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
+
 3. Install dependencies:
+
    ```bash
    pip install -r ../requirements.txt
    ```
+
 4. Run migrations:
+
    ```bash
    python manage.py migrate
    ```
+
 5. Start the development server:
+
    ```bash
    python manage.py runserver
    ```
 
 ### Frontend Setup
+
 1. Navigate to the frontend directory:
+
    ```bash
    cd frontend
    ```
+
 2. Install dependencies:
+
    ```bash
    npm install
    ```
+
 3. Start the Vite development server:
+
    ```bash
    npm run dev
    ```
 
+### video link
+
+gdrive_link - <https://drive.google.com/drive/folders/10cSDu7fBWRnqDsAnYVL_9e7t2yAKGkvQ?usp=share_link>
+
 ## 📝 License
+
 This project is developed as part of the Creative Studio Workflow assignment.
