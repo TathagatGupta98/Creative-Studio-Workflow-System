@@ -18,7 +18,6 @@ export default function Notifications() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchNotifications();
   }, [fetchNotifications]);
 

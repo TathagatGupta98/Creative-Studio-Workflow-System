@@ -9,6 +9,11 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+import os
+import dj_database_url
+
+# Allow Render to host the app
+ALLOWED_HOSTS = ['*']
 
 from pathlib import Path
 
@@ -20,13 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ae&(k5l2_#4rao3dr^igf3#npsvq$r6a37w_!i$v&6_&3wtq)0'
-
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ae&(k5l2_#4rao3dr^igf3#npsvq$r6a37w_!i$v&6_&3wtq)0')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Application definition
 
@@ -46,6 +47,7 @@ INSTALLED_APPS = [
     # Your apps
     'users',
     'projects',
+
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -53,6 +55,7 @@ AUTH_USER_MODEL = 'users.User'
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -86,10 +89,10 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default='sqlite:///db.sqlite3',
+        conn_max_age=600
+    )
 }
 
 
@@ -127,7 +130,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -143,9 +148,7 @@ REST_FRAMEWORK = {
     ),
 }
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",   
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 from datetime import timedelta
 SIMPLE_JWT = {
