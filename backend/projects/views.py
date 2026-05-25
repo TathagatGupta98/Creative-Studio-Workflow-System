@@ -34,6 +34,32 @@ class TaskViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['project', 'description']
 
+    def _create_assignment_notifications(self, task, assignees, actor):
+        recipients = assignees.exclude(id=actor.id) if actor else assignees
+        if not recipients.exists():
+            return
+
+        message = f'You were assigned to task "{task.title}".'
+        notifications = [
+            Notification(user=user, task=task, message=message)
+            for user in recipients
+        ]
+        Notification.objects.bulk_create(notifications)
+
+    def perform_create(self, serializer):
+        task = serializer.save()
+        self._create_assignment_notifications(task, task.assignees.all(), self.request.user)
+
+    def perform_update(self, serializer):
+        task = self.get_object()
+        before_ids = set(task.assignees.values_list('id', flat=True))
+        updated_task = serializer.save()
+        after_ids = set(updated_task.assignees.values_list('id', flat=True))
+        added_ids = after_ids - before_ids
+        if added_ids:
+            new_assignees = updated_task.assignees.filter(id__in=added_ids)
+            self._create_assignment_notifications(updated_task, new_assignees, self.request.user)
+
     def get_queryset(self):
         # Users see tasks from projects in their studio
         user = self.request.user
@@ -52,7 +78,16 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        comment = serializer.save(author=self.request.user)
+        task = comment.task
+        recipients = task.assignees.exclude(id=self.request.user.id)
+        if recipients.exists():
+            message = f'New comment on "{task.title}" by {self.request.user.username}.'
+            notifications = [
+                Notification(user=user, task=task, message=message)
+                for user in recipients
+            ]
+            Notification.objects.bulk_create(notifications)
 
     def get_queryset(self):
         user = self.request.user
@@ -85,9 +120,10 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         ).distinct()
 
 
-class NotificationViewSet(mixins.ListModelMixin, 
-                          mixins.UpdateModelMixin, 
-                          mixins.RetrieveModelMixin, 
+class NotificationViewSet(mixins.ListModelMixin,
+                          mixins.UpdateModelMixin,
+                          mixins.RetrieveModelMixin,
+                          mixins.DestroyModelMixin,
                           viewsets.GenericViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
