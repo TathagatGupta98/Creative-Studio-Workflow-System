@@ -8,8 +8,12 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
+  const publicPaths = ['/auth/login/', '/auth/refresh/', '/users/register/']
+  const requestUrl = config.url || ''
+  const isPublic = publicPaths.some((path) => requestUrl.startsWith(path))
   const token = localStorage.getItem('access_token')
-  if (token) {
+
+  if (!isPublic && token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config

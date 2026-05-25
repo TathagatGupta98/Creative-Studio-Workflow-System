@@ -1,6 +1,8 @@
 from django.db.models import Q
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, mixins, filters
 from .models import Project, Task, Comment, Attachment, Notification
+from .filters import TaskFilter
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, AttachmentSerializer, NotificationSerializer
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -30,9 +32,10 @@ class TaskViewSet(viewsets.ModelViewSet):
     serializer_class = TaskSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    # /api/tasks/?search=design
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['project', 'description']
+    # /api/tasks/?search=design&tag=branding
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_class = TaskFilter
+    search_fields = ['title', 'description', 'project__title']
 
     def _create_assignment_notifications(self, task, assignees, actor):
         recipients = assignees.exclude(id=actor.id) if actor else assignees

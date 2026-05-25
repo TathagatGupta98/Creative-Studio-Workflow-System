@@ -6,6 +6,7 @@ import {
   Circle, 
   Clock, 
   AlertCircle,
+  Search,
   ChevronRight,
   User,
   Tag as TagIcon,
@@ -20,6 +21,8 @@ export default function Tasks() {
   const { user: currentUser } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -29,8 +32,21 @@ export default function Tasks() {
   }, []);
 
   const fetchTasks = async () => {
+    setLoading(true);
     try {
-      const response = await api.get('/projects/tasks/');
+      const params = {};
+      const searchValue = searchTerm.trim();
+      const tagValue = tagFilter.trim();
+
+      if (searchValue) {
+        params.search = searchValue;
+      }
+
+      if (tagValue) {
+        params.tag = tagValue;
+      }
+
+      const response = await api.get('/projects/tasks/', { params });
       setTasks(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
@@ -72,29 +88,60 @@ export default function Tasks() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide flex-1">
-          {['ALL', 'DRAFT', 'REVIEW', 'REVISION', 'APPROVED', 'COMPLETED'].map(status => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                statusFilter === status 
-                  ? 'bg-slate-900 text-white' 
-                  : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              {status === 'ALL' ? 'All Tasks' : status.replace('_', ' ')}
-            </button>
-          ))}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:flex-1">
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <div className="relative w-full sm:w-64">
+            <TagIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Filter by tag"
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={fetchTasks}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-semibold hover:bg-slate-800 transition-all w-full sm:w-auto"
+          >
+            <Search size={16} />
+            Search
+          </button>
         </div>
         <button 
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 rounded-lg text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm transition-all w-full sm:w-auto"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 rounded-lg text-sm font-semibold text-white hover:bg-indigo-700 shadow-sm transition-all w-full lg:w-auto"
         >
           <Plus size={18} />
           New Task
         </button>
+      </div>
+
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+        {['ALL', 'DRAFT', 'REVIEW', 'REVISION', 'APPROVED', 'COMPLETED'].map(status => (
+          <button
+            key={status}
+            onClick={() => setStatusFilter(status)}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
+              statusFilter === status 
+                ? 'bg-slate-900 text-white' 
+                : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+            }`}
+          >
+            {status === 'ALL' ? 'All Tasks' : status.replace('_', ' ')}
+          </button>
+        ))}
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
