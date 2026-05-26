@@ -1,6 +1,8 @@
 from django.db.models import Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, permissions, mixins, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from .models import Project, Task, Comment, Attachment, Notification
 from .filters import TaskFilter
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, AttachmentSerializer, NotificationSerializer
@@ -150,3 +152,8 @@ class NotificationViewSet(mixins.ListModelMixin,
     def get_queryset(self):
         # Users only see their own notifications
         return self.queryset.filter(user=self.request.user).order_by('-created_at')
+
+    @action(detail=False, methods=['post'])
+    def mark_all_as_read(self, request):
+        self.get_queryset().filter(is_read=False).update(is_read=True)
+        return Response({'status': 'all notifications marked as read'})

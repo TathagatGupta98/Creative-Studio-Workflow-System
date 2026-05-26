@@ -165,13 +165,13 @@ export default function Layout({ children }) {
             <h1 className="neo-title-md">{activeLabel}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <a
-              href="/notifications"
+            <Link
+              to="/notifications"
               className="neo-icon-btn neo-radius-none p-2"
               aria-label="Notifications"
             >
               <Bell size={18} />
-            </a>
+            </Link>
             <div className="w-10 h-10 neo-border neo-shadow neo-radius-none bg-[var(--neo-yellow)] flex items-center justify-center">
               <span className="neo-label-md">
                 {user?.username?.[0]?.toUpperCase() || 'U'}

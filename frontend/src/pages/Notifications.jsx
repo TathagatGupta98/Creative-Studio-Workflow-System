@@ -30,6 +30,15 @@ export default function Notifications() {
     }
   };
 
+  const markAllAsRead = async () => {
+    try {
+      await api.post('/projects/notifications/mark_all_as_read/');
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
+  };
+
   const deleteNotification = async (id) => {
     try {
       await api.delete(`/projects/notifications/${id}/`);
@@ -45,7 +54,13 @@ export default function Notifications() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="neo-title-md">Notifications</h2>
-        <button className="neo-btn neo-radius-none px-3 py-2">Mark all as read</button>
+        <button 
+          onClick={markAllAsRead}
+          className="neo-btn neo-radius-none px-3 py-2"
+          disabled={notifications.every(n => n.is_read)}
+        >
+          Mark all as read
+        </button>
       </div>
 
       <div className="flex flex-col gap-4">
