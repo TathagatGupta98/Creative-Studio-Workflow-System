@@ -5,6 +5,9 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Tasks from './pages/Tasks';
 import Notifications from './pages/Notifications';
+import Profile from './pages/Profile';
+import StudioManagement from './pages/StudioManagement';
+import DiscoverStudios from './pages/DiscoverStudios';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
@@ -54,6 +57,39 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <Notifications />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Profile />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/management"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <StudioManagement />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/discover"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DiscoverStudios />
                 </Layout>
               </ProtectedRoute>
             }

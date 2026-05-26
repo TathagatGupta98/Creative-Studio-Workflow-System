@@ -1,21 +1,30 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import api from '../api/axios';
+import NeoSelect from './NeoSelect';
 
 export default function CreateProjectModal({ onClose, onSuccess }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [status, setStatus] = useState('DRAFT');
   const [users, setUsers] = useState([]);
   const [selectedMembers, setSelectedMembers] = useState([]);
   const [fetchingUsers, setFetchingUsers] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const statusOptions = [
+    { value: 'DRAFT', label: 'Draft' },
+    { value: 'IN_PROGRESS', label: 'In Progress' },
+    { value: 'COMPLETED', label: 'Completed' },
+  ];
+
   useEffect(() => {
     async function fetchUsers() {
       try {
         setFetchingUsers(true);
-        const response = await api.get('/users/list/?scope=all');
+        // Only fetch users for the CURRENT studio
+        const response = await api.get('/users/list/');
         setUsers(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error('Failed to fetch users:', err);
@@ -43,6 +52,7 @@ export default function CreateProjectModal({ onClose, onSuccess }) {
       const payload = {
         title,
         description,
+        status,
         members: selectedMembers,
       };
 
@@ -66,7 +76,7 @@ export default function CreateProjectModal({ onClose, onSuccess }) {
           </button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
           <div>
             <label className="neo-label-md block mb-2">Project Title</label>
             <input
@@ -76,6 +86,15 @@ export default function CreateProjectModal({ onClose, onSuccess }) {
               onChange={(e) => setTitle(e.target.value)}
               className="neo-input neo-radius-none w-full"
               placeholder="e.g., Summer Campaign 2026"
+            />
+          </div>
+
+          <div>
+            <label className="neo-label-md block mb-2">Initial Status</label>
+            <NeoSelect 
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              options={statusOptions}
             />
           </div>
           
@@ -96,7 +115,7 @@ export default function CreateProjectModal({ onClose, onSuccess }) {
                 <p className="neo-body-md text-[var(--neo-text-muted)]">Loading users...</p>
               )}
               {!fetchingUsers && users.length === 0 && (
-                <p className="neo-body-md text-[var(--neo-text-muted)]">No users available.</p>
+                <p className="neo-body-md text-[var(--neo-text-muted)]">No users in studio.</p>
               )}
               {!fetchingUsers && users.map((user) => (
                 <label key={user.id} className="flex items-center gap-2 neo-body-md">
@@ -110,9 +129,6 @@ export default function CreateProjectModal({ onClose, onSuccess }) {
                 </label>
               ))}
             </div>
-            <p className="neo-label-sm text-[var(--neo-text-muted)] mt-2">
-              Members added here will appear in the task assignee list.
-            </p>
           </div>
 
           {error && (

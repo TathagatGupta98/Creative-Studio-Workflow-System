@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Calendar, User, Folder } from 'lucide-react';
 import api from '../api/axios';
+import NeoSelect from './NeoSelect';
 
 export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, currentUser }) {
   const [projects, setProjects] = useState([]);
@@ -169,27 +170,24 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
               <label className="neo-label-md block mb-2 flex items-center gap-2">
                 <Folder size={14} /> Project
               </label>
-              <select
-                value={formData.project}
-                onChange={(e) => {
-                  const nextProjectId = e.target.value;
-                  const nextProject = projects.find(
-                    (project) => String(project.id) === String(nextProjectId)
-                  );
-                  const { assignees } = getAvailableUsersForProject(nextProject, formData.assignees);
+              <NeoSelect
+                 value={formData.project}
+                 onChange={(e) => {
+                   const nextProjectId = e.target.value;
+                   const nextProject = projects.find(
+                     (project) => String(project.id) === String(nextProjectId)
+                   );
+                   const { assignees } = getAvailableUsersForProject(nextProject, formData.assignees);
 
-                  setFormData((prev) => ({
-                    ...prev,
-                    project: nextProjectId,
-                    assignees,
-                  }));
-                }}
-                className="neo-input neo-radius-none w-full bg-[var(--neo-surface)]"
-                required
-              >
-                <option value="">Select Project</option>
-                {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
-              </select>
+                   setFormData((prev) => ({
+                     ...prev,
+                     project: nextProjectId,
+                     assignees,
+                   }));
+                 }}
+                 options={projects.map(p => ({ value: p.id, label: p.title }))}
+                 placeholder="Select Project"
+              />
             </div>
             <div>
               <label className="neo-label-md block mb-2 flex items-center gap-2">
@@ -219,15 +217,15 @@ export default function CreateTaskModal({ onClose, onSuccess, initialProjectId, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="neo-label-md block mb-2">Priority</label>
-              <select
+              <NeoSelect
                 value={formData.priority}
                 onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                className="neo-input neo-radius-none w-full bg-[var(--neo-surface)]"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-              </select>
+                options={[
+                   { value: 'LOW', label: 'Low' },
+                   { value: 'MEDIUM', label: 'Medium' },
+                   { value: 'HIGH', label: 'High' }
+                ]}
+              />
             </div>
             <div>
               <label className="neo-label-md block mb-2 flex items-center gap-2">

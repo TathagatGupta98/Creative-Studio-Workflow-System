@@ -9,12 +9,15 @@ import {
   LogOut, 
   User as UserIcon,
   Menu,
-  X
+  X,
+  Settings,
+  Compass
 } from 'lucide-react';
 import { useState } from 'react';
+import NeoSelect from './NeoSelect';
 
 export default function Layout({ children }) {
-  const { user, logout } = useAuth();
+  const { user, logout, setUser } = useAuth();
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -23,7 +26,14 @@ export default function Layout({ children }) {
     { name: 'Projects', href: '/projects', icon: FolderKanban },
     { name: 'Tasks', href: '/tasks', icon: CheckSquare },
     { name: 'Notifications', href: '/notifications', icon: Bell },
+    { name: 'Discover', href: '/discover', icon: Compass },
   ];
+
+  // Only add Management if user is an admin of the CURRENT studio
+  const currentMembership = user?.memberships?.find(m => m.studio === user?.current_studio);
+  if (currentMembership?.is_admin || user?.current_studio === user?.personal_workspace) {
+    navigation.push({ name: 'Management', href: '/management', icon: Settings });
+  }
 
   const isActive = (path) => location.pathname === path;
   const activeLabel = navigation.find((item) => isActive(item.href))?.name || 'Overview';
@@ -68,7 +78,7 @@ export default function Layout({ children }) {
             </nav>
 
             <div className="px-4 py-6 mt-auto border-t-2 border-[var(--neo-border)]">
-              <div className="flex items-center gap-3 px-3 py-2 neo-border neo-shadow neo-radius">
+              <Link to="/profile" className="flex items-center gap-3 px-3 py-2 neo-border neo-shadow neo-radius hover:bg-[var(--neo-surface-high)] transition-colors">
                 <div className="w-9 h-9 bg-[var(--neo-surface-high)] neo-border flex items-center justify-center">
                   <UserIcon size={18} className="text-[var(--neo-text)]" />
                 </div>
@@ -78,7 +88,7 @@ export default function Layout({ children }) {
                     {user?.role?.replace('_', ' ').toLowerCase()}
                   </p>
                 </div>
-              </div>
+              </Link>
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -126,7 +136,7 @@ export default function Layout({ children }) {
         </nav>
 
         <div className="px-4 py-6 mt-auto border-t-2 border-[var(--neo-border)]">
-          <div className="flex items-center gap-3 px-3 py-2 neo-border neo-shadow neo-radius">
+          <Link to="/profile" className="flex items-center gap-3 px-3 py-2 neo-border neo-shadow neo-radius hover:bg-[var(--neo-surface-high)] transition-colors">
             <div className="w-9 h-9 bg-[var(--neo-surface-high)] neo-border flex items-center justify-center">
               <UserIcon size={18} className="text-[var(--neo-text)]" />
             </div>
@@ -138,7 +148,7 @@ export default function Layout({ children }) {
                 {user?.role?.replace('_', ' ').toLowerCase()}
               </p>
             </div>
-          </div>
+          </Link>
           <button
             onClick={logout}
             className="mt-3 w-full neo-btn neo-radius-none py-2 px-3 text-[var(--neo-red)] hover:bg-[var(--neo-red)] hover:text-white"
@@ -162,9 +172,31 @@ export default function Layout({ children }) {
             >
               {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-            <h1 className="neo-title-md">{activeLabel}</h1>
+            <h1 className="neo-title-md hidden md:block">{activeLabel}</h1>
           </div>
           <div className="flex items-center gap-3">
+            <NeoSelect
+              className="w-[180px] md:w-[220px]"
+              value={user?.current_studio || ''}
+              onChange={async (e) => {
+                const newStudioId = e.target.value;
+                try {
+                  const api = (await import('../api/axios')).default;
+                  const response = await api.patch('/users/me/', { current_studio: newStudioId });
+                  setUser(response.data);
+                  window.location.reload(); 
+                } catch (error) {
+                  console.error('Failed to switch studio', error);
+                }
+              }}
+              options={[
+                { value: user?.personal_workspace || '', label: 'Personal Workspace' },
+                ...(user?.memberships?.filter(m => m.studio !== user?.personal_workspace).map(m => ({
+                  value: m.studio,
+                  label: m.studio_details?.name
+                })) || [])
+              ]}
+            />
             <Link
               to="/notifications"
               className="neo-icon-btn neo-radius-none p-2"
@@ -172,11 +204,11 @@ export default function Layout({ children }) {
             >
               <Bell size={18} />
             </Link>
-            <div className="w-10 h-10 neo-border neo-shadow neo-radius-none bg-[var(--neo-yellow)] flex items-center justify-center">
+            <Link to="/profile" className="w-10 h-10 neo-border neo-shadow neo-radius-none bg-[var(--neo-yellow)] flex items-center justify-center hover:scale-105 transition-transform">
               <span className="neo-label-md">
                 {user?.username?.[0]?.toUpperCase() || 'U'}
               </span>
-            </div>
+            </Link>
           </div>
         </header>
 

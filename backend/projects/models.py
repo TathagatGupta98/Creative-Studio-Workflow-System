@@ -87,7 +87,8 @@ class Attachment(models.Model):
 
 class Notification(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="notifications")
+    studio = models.ForeignKey("users.Studio", on_delete=models.CASCADE, related_name="notifications", null=True, blank=True)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="notifications", null=True, blank=True)
     message = models.CharField(max_length=255)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

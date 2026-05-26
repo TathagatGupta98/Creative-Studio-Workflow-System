@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 
@@ -6,7 +6,26 @@ const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        try {
+          const response = await api.get('/users/me/')
+          setUser(response.data)
+        } catch (error) {
+          console.error('Failed to restore session', error)
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+        }
+      }
+      setLoading(false)
+    }
+    initAuth()
+  }, [])
 
   const login = async (username, password) => {
     const response = await api.post('/auth/login/', { username, password })
@@ -34,8 +53,8 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, register }}>
-      {children}
+    <AuthContext.Provider value={{ user, setUser, login, logout, register, loading }}>
+      {!loading && children}
     </AuthContext.Provider>
   )
 }

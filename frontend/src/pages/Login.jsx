@@ -12,6 +12,7 @@ export default function Login() {
   const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +29,7 @@ export default function Login() {
           return;
         }
 
-        const payload = { username, password };
+        const payload = { username, password, is_public: isPublic };
         if (email) payload.email = email;
         if (firstName) payload.first_name = firstName;
         if (lastName) payload.last_name = lastName;
@@ -172,6 +173,21 @@ export default function Login() {
                 className="neo-input neo-radius-none w-full"
                 required
               />
+            </div>
+          )}
+
+          {isSignUp && (
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="isPublic"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="w-5 h-5 neo-border accent-[var(--neo-blue)]"
+              />
+              <label htmlFor="isPublic" className="neo-label-md cursor-pointer">
+                Public Account (Can join public studios)
+              </label>
             </div>
           )}
 

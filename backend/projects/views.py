@@ -14,15 +14,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # Automatically assign the project to the user's studio
-        project = serializer.save(owner=self.request.user, studio=self.request.user.studio)
+        project = serializer.save(owner=self.request.user, studio=self.request.user.current_studio)
         project.members.add(self.request.user)
 
     def get_queryset(self):
-        # Users only see projects from their own studio
+        # Users only see projects from their current studio
         user = self.request.user
-        if user.studio:
+        if user.current_studio:
             return self.queryset.filter(
-                Q(studio=user.studio) | Q(owner=user) | Q(members=user)
+                Q(studio=user.current_studio) | Q(owner=user) | Q(members=user)
             ).distinct()
         return self.queryset.filter(
             Q(owner=user) | Q(members=user)
@@ -46,7 +46,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         message = f'You were assigned to task "{task.title}".'
         notifications = [
-            Notification(user=user, task=task, message=message)
+            Notification(user=user, studio=task.project.studio, task=task, message=message)
             for user in recipients
         ]
         Notification.objects.bulk_create(notifications)
@@ -68,9 +68,9 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Users see tasks from projects in their studio
         user = self.request.user
-        if user.studio:
+        if user.current_studio:
             return self.queryset.filter(
-                Q(project__studio=user.studio) | Q(project__owner=user) | Q(project__members=user)
+                Q(project__studio=user.current_studio) | Q(project__owner=user) | Q(project__members=user)
             ).distinct()
         return self.queryset.filter(
             Q(project__owner=user) | Q(project__members=user)
@@ -104,16 +104,16 @@ class CommentViewSet(viewsets.ModelViewSet):
             recipients = User.objects.filter(id__in=recipient_ids)
             
             notifications = [
-                Notification(user=user, task=task, message=message)
+                Notification(user=user, studio=task.project.studio, task=task, message=message)
                 for user in recipients
             ]
             Notification.objects.bulk_create(notifications)
 
     def get_queryset(self):
         user = self.request.user
-        if user.studio:
+        if user.current_studio:
             return self.queryset.filter(
-                Q(task__project__studio=user.studio)
+                Q(task__project__studio=user.current_studio)
                 | Q(task__project__owner=user)
                 | Q(task__project__members=user)
             ).distinct()
@@ -129,9 +129,9 @@ class AttachmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.studio:
+        if user.current_studio:
             return self.queryset.filter(
-                Q(task__project__studio=user.studio)
+                Q(task__project__studio=user.current_studio)
                 | Q(task__project__owner=user)
                 | Q(task__project__members=user)
             ).distinct()
@@ -150,8 +150,11 @@ class NotificationViewSet(mixins.ListModelMixin,
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        # Users only see their own notifications
-        return self.queryset.filter(user=self.request.user).order_by('-created_at')
+        user = self.request.user
+        qs = self.queryset.filter(user=user)
+        if user.current_studio:
+            qs = qs.filter(studio=user.current_studio)
+        return qs.order_by('-created_at')
 
     @action(detail=False, methods=['post'])
     def mark_all_as_read(self, request):

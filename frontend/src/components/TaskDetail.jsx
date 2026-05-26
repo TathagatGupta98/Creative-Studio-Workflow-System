@@ -7,6 +7,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import api from '../api/axios';
+import NeoSelect from './NeoSelect';
 
 export default function TaskDetail({ taskId, onClose, onUpdate }) {
   const [task, setTask] = useState(null);
@@ -37,7 +38,6 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
 
   useEffect(() => {
     if (taskId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       void fetchTask();
     }
   }, [taskId, fetchTask]);
@@ -195,11 +195,19 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
     );
   }
 
+  const statusOptions = [
+    { value: 'DRAFT', label: 'Draft' },
+    { value: 'REVIEW', label: 'Review' },
+    { value: 'REVISION', label: 'Revision' },
+    { value: 'APPROVED', label: 'Approved' },
+    { value: 'COMPLETED', label: 'Completed' },
+  ];
+
   const priorityClass = {
     HIGH: 'neo-chip--overdue',
     MEDIUM: 'neo-chip--review',
     LOW: 'neo-chip--draft',
-  }[task.priority] || 'neo-chip--draft';
+  }[task.priority] || priorityClass;
 
   const statusClass = {
     DRAFT: 'neo-chip--draft',
@@ -234,17 +242,11 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">
                 <span className="neo-label-md text-[var(--neo-text-muted)]">Status</span>
-                <select
-                  value={task.status}
-                  onChange={(e) => handleStatusChange(e.target.value)}
-                  className="neo-input neo-radius-none w-full bg-[var(--neo-surface)]"
-                >
-                  <option value="DRAFT">Draft</option>
-                  <option value="REVIEW">Review</option>
-                  <option value="REVISION">Revision</option>
-                  <option value="APPROVED">Approved</option>
-                  <option value="COMPLETED">Completed</option>
-                </select>
+                <NeoSelect
+                   value={task.status}
+                   onChange={(e) => handleStatusChange(e.target.value)}
+                   options={statusOptions}
+                />
               </div>
 
               <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">

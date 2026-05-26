@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
-import { Plus, Search, Filter, MoreVertical, Calendar, Trash2 } from 'lucide-react';
+import { Plus, Filter, Calendar, Trash2 } from 'lucide-react';
 import CreateProjectModal from '../components/CreateProjectModal';
+import ManageProjectModal from '../components/ManageProjectModal';
 
 export default function Projects() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
 
   const handleDeleteProject = async (projectId, projectTitle) => {
     const confirmed = window.confirm(
@@ -161,7 +163,12 @@ export default function Projects() {
               <div className="w-8 h-8 neo-border bg-[var(--neo-yellow)] flex items-center justify-center">
                 <span className="neo-label-sm">{project.owner?.username?.[0]?.toUpperCase() || 'U'}</span>
               </div>
-              <button className="neo-label-md underline">Manage Project</button>
+              <button 
+                onClick={() => setEditingProject(project)}
+                className="neo-label-md underline hover:text-[var(--neo-blue)] transition-colors"
+              >
+                Manage Project
+              </button>
             </div>
           </div>
         ))}
@@ -178,6 +185,14 @@ export default function Projects() {
       {showCreateModal && (
         <CreateProjectModal
           onClose={() => setShowCreateModal(false)}
+          onSuccess={fetchProjects}
+        />
+      )}
+
+      {editingProject && (
+        <ManageProjectModal
+          project={editingProject}
+          onClose={() => setEditingProject(null)}
           onSuccess={fetchProjects}
         />
       )}
