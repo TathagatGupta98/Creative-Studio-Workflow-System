@@ -35,6 +35,8 @@ export default function Login() {
         return;
       }
 
+      const buttonWidth = Math.max(240, Math.floor(googleButtonRef.current.clientWidth || 320));
+
       window.google.accounts.id.initialize({
         client_id: clientId,
         callback: async ({ credential }) => {
@@ -61,7 +63,7 @@ export default function Login() {
         size: 'large',
         text: 'signin_with',
         shape: 'rectangular',
-        width: 320,
+        width: buttonWidth,
       });
     };
 
@@ -130,181 +132,182 @@ export default function Login() {
         <div className="absolute top-20 right-1/3 w-16 h-16 bg-[var(--neo-surface-variant)] neo-border-thick neo-shadow-lg rotate-6" />
       </div>
 
-      <div className="relative w-full max-w-md neo-surface neo-border-thick neo-shadow-xl p-8">
-        <div className="text-center mb-8 flex flex-col items-center gap-3">
-          <BrandMark className="w-24 h-24" />
-          <div>
-            <h1 className="neo-title-xl">StudioFlow</h1>
-            <p className="neo-label-md text-[var(--neo-text-muted)]">Creative Workspace</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3 mb-6">
-          <button
-            type="button"
-            onClick={() => {
-              setMode('login');
-              setError('');
-            }}
-            className={`flex-1 py-2 neo-label-md border-2 transition-all ${
-              !isSignUp
-                ? 'bg-[var(--neo-blue)] text-white border-[var(--neo-border)] neo-shadow'
-                : 'bg-[var(--neo-surface)] text-[var(--neo-text)] border-[var(--neo-border)] hover:bg-[var(--neo-surface-high)]'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('signup');
-              setError('');
-            }}
-            className={`flex-1 py-2 neo-label-md border-2 transition-all ${
-              isSignUp
-                ? 'bg-[var(--neo-blue)] text-white border-[var(--neo-border)] neo-shadow'
-                : 'bg-[var(--neo-surface)] text-[var(--neo-text)] border-[var(--neo-border)] hover:bg-[var(--neo-surface-high)]'
-            }`}
-          >
-            Create Account
-          </button>
-        </div>
-
-        {!isSignUp && (
-          <div className="mb-6 space-y-3">
-            <div ref={googleButtonRef} />
-            <div className="flex items-center gap-3 text-[var(--neo-text-muted)]">
-              <div className="h-px flex-1 bg-[var(--neo-border)]" />
-              <span className="neo-label-sm uppercase tracking-[0.2em]">or</span>
-              <div className="h-px flex-1 bg-[var(--neo-border)]" />
+      <div className="relative w-full max-w-5xl neo-surface neo-border-thick neo-shadow-xl overflow-hidden">
+        <div className="grid w-full md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="p-8 md:p-10 flex flex-col gap-6 justify-center">
+            <BrandMark className="w-36 h-40 md:w-40 md:h-44" />
+            <div>
+              <h1 className="neo-title-xl">StudioFlow</h1>
+              <p className="neo-label-md text-[var(--neo-text-muted)]">Creative Workspace</p>
             </div>
+            <p className="neo-body-md text-[var(--neo-text)]/80">
+              Plan projects, collaborate with your studio, and keep every client update in one
+              focused workspace. Track tasks, approvals, and deadlines with clarity.
+            </p>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {isSignUp && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-8 md:p-10 border-t-2 md:border-t-0 md:border-l-2 border-[var(--neo-border)]">
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('login');
+                  setError('');
+                }}
+                className={`flex-1 py-2 neo-label-md border-2 transition-all ${
+                  !isSignUp
+                    ? 'bg-[var(--neo-blue)] text-white border-[var(--neo-border)] neo-shadow'
+                    : 'bg-[var(--neo-surface)] text-[var(--neo-text)] border-[var(--neo-border)] hover:bg-[var(--neo-surface-high)]'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMode('signup');
+                  setError('');
+                }}
+                className={`flex-1 py-2 neo-label-md border-2 transition-all ${
+                  isSignUp
+                    ? 'bg-[var(--neo-blue)] text-white border-[var(--neo-border)] neo-shadow'
+                    : 'bg-[var(--neo-surface)] text-[var(--neo-text)] border-[var(--neo-border)] hover:bg-[var(--neo-surface-high)]'
+                }`}
+              >
+                Create Account
+              </button>
+            </div>
+
+            {!isSignUp && (
+              <div className="mb-6 space-y-3">
+                <div className="w-full flex justify-center">
+                  <div ref={googleButtonRef} className="w-full" />
+                </div>
+                <br></br>
+                <div className="flex items-center gap-3 text-[var(--neo-text-muted)]">
+                  <div className="h-px flex-1 bg-[var(--neo-border)]" />
+                  <span className="neo-label-sm uppercase tracking-[0.2em]">or</span>
+                  <div className="h-px flex-1 bg-[var(--neo-border)]" />
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {isSignUp && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="neo-label-md block mb-2">First name</label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Jane"
+                      className="neo-input neo-radius-none w-full"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="neo-label-md block mb-2">Last name</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Doe"
+                      className="neo-input neo-radius-none w-full"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="neo-label-md block mb-2">First name</label>
+                <label className="neo-label-md block mb-2">Username</label>
                 <input
                   type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Jane"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
                   className="neo-input neo-radius-none w-full"
+                  required
                 />
               </div>
 
+              {isSignUp && (
+                <div>
+                  <label className="neo-label-md block mb-2">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="jane@studio.com"
+                    className="neo-input neo-radius-none w-full"
+                  />
+                </div>
+              )}
+
               <div>
-                <label className="neo-label-md block mb-2">Last name</label>
+                <label className="neo-label-md block mb-2">Password</label>
                 <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Doe"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   className="neo-input neo-radius-none w-full"
+                  required
                 />
               </div>
-            </div>
-          )}
 
-          <div>
-            <label className="neo-label-md block mb-2">Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-              className="neo-input neo-radius-none w-full"
-              required
-            />
+              {isSignUp && (
+                <div>
+                  <label className="neo-label-md block mb-2">Confirm password</label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="neo-input neo-radius-none w-full"
+                    required
+                  />
+                </div>
+              )}
+
+              {isSignUp && (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="isPublic"
+                    checked={isPublic}
+                    onChange={(e) => setIsPublic(e.target.checked)}
+                    className="w-5 h-5 neo-border accent-[var(--neo-blue)]"
+                  />
+                  <label htmlFor="isPublic" className="neo-label-md cursor-pointer">
+                    Public Account (Can join public studios)
+                  </label>
+                </div>
+              )}
+
+              {error && (
+                <div className="neo-border neo-shadow neo-radius-none bg-[var(--neo-red)] text-white px-4 py-3 flex items-center gap-2">
+                  <ShieldCheck size={18} />
+                  <span className="neo-body-md">{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="neo-btn neo-btn-primary neo-radius-none w-full py-3"
+              >
+                {loading
+                  ? isSignUp
+                    ? 'Creating account...'
+                    : 'Authenticating...'
+                  : isSignUp
+                    ? 'Create Account'
+                    : 'Sign In'}
+              </button>
+            </form>
           </div>
-
-          {isSignUp && (
-            <div>
-              <label className="neo-label-md block mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="jane@studio.com"
-                className="neo-input neo-radius-none w-full"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="neo-label-md block mb-2">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="neo-input neo-radius-none w-full"
-              required
-            />
-          </div>
-
-          {isSignUp && (
-            <div>
-              <label className="neo-label-md block mb-2">Confirm password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repeat your password"
-                className="neo-input neo-radius-none w-full"
-                required
-              />
-            </div>
-          )}
-
-          {isSignUp && (
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                id="isPublic"
-                checked={isPublic}
-                onChange={(e) => setIsPublic(e.target.checked)}
-                className="w-5 h-5 neo-border accent-[var(--neo-blue)]"
-              />
-              <label htmlFor="isPublic" className="neo-label-md cursor-pointer">
-                Public Account (Can join public studios)
-              </label>
-            </div>
-          )}
-
-          {error && (
-            <div className="neo-border neo-shadow neo-radius-none bg-[var(--neo-red)] text-white px-4 py-3 flex items-center gap-2">
-              <ShieldCheck size={18} />
-              <span className="neo-body-md">{error}</span>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="neo-btn neo-btn-primary neo-radius-none w-full py-3"
-          >
-            {loading ? (isSignUp ? 'Creating account...' : 'Authenticating...') : isSignUp ? 'Create Account' : 'Sign In'}
-          </button>
-        </form>
-
-        
-
-        <p className="text-center mt-8 neo-body-md text-[var(--neo-text-muted)]">
-          {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
-          <button
-            type="button"
-            onClick={() => {
-              setMode(isSignUp ? 'login' : 'signup');
-              setError('');
-            }}
-            className="neo-label-md text-[var(--neo-text)] underline"
-          >
-            {isSignUp ? 'Sign in' : 'Create one'}
-          </button>
-        </p>
+        </div>
       </div>
     </div>
   );
