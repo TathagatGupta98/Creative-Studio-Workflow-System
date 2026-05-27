@@ -18,6 +18,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Projects() {
   const { user: currentUser } = useAuth();
+  const isLeadOrAdmin = currentUser?.role === 'STUDIO_ADMIN' || currentUser?.role === 'PROJECT_LEAD' || currentUser?.current_studio === currentUser?.personal_workspace;
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -203,19 +204,22 @@ export default function Projects() {
             </button>
           </div>
 
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="neo-btn neo-btn-secondary neo-radius-none px-4 py-2 flex items-center gap-2"
-          >
-            <Plus size={18} />
-            Create Project
-          </button>
+          {isLeadOrAdmin && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="neo-btn neo-btn-secondary neo-radius-none px-4 py-2 flex items-center gap-2"
+            >
+              <Plus size={18} />
+              Create Project
+            </button>
+          )}
         </div>
       </div>
 
       <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-6"}>
         {filteredProjects.map((project) => {
           const taskStats = getTaskStats(project.tasks);
+          const isProjectManager = isLeadOrAdmin || currentUser?.username === project.owner;
 
           if (viewMode === 'list') {
             return (
@@ -286,20 +290,24 @@ export default function Projects() {
 
                       {/* Controls and Toggles */}
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => setEditingProject(project)}
-                          className="neo-btn neo-radius-none px-3 py-1.5 neo-label-sm hover:bg-[var(--neo-surface-muted)]"
-                        >
-                          Manage
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteProject(project.id, project.title)}
-                          className="neo-icon-btn neo-radius-none p-1.5 text-[var(--neo-text)] hover:text-white hover:bg-[var(--neo-red)]"
-                          aria-label={`Delete ${project.title}`}
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        {isProjectManager && (
+                          <>
+                            <button 
+                              onClick={() => setEditingProject(project)}
+                              className="neo-btn neo-radius-none px-3 py-1.5 neo-label-sm hover:bg-[var(--neo-surface-muted)]"
+                            >
+                              Manage
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProject(project.id, project.title)}
+                              className="neo-icon-btn neo-radius-none p-1.5 text-[var(--neo-text)] hover:text-white hover:bg-[var(--neo-red)]"
+                              aria-label={`Delete ${project.title}`}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
                         
                         {taskStats.total > 0 ? (
                           <button
@@ -314,13 +322,15 @@ export default function Projects() {
                             )}
                           </button>
                         ) : (
-                          <button
-                            onClick={() => handleOpenCreateTask(project.id)}
-                            className="neo-btn neo-radius-none px-3 py-1.5 neo-label-sm border-2 border-dashed flex items-center gap-1"
-                          >
-                            <Plus size={14} />
-                            Add Task
-                          </button>
+                          isProjectManager && (
+                            <button
+                              onClick={() => handleOpenCreateTask(project.id)}
+                              className="neo-btn neo-radius-none px-3 py-1.5 neo-label-sm border-2 border-dashed flex items-center gap-1"
+                            >
+                              <Plus size={14} />
+                              Add Task
+                            </button>
+                          )
                         )}
                       </div>
                     </div>
@@ -365,13 +375,15 @@ export default function Projects() {
                         </div>
                       ))}
                       
-                      <button
-                        onClick={() => handleOpenCreateTask(project.id)}
-                        className="neo-surface border-2 border-dashed border-[var(--neo-border)] hover:bg-[var(--neo-surface-high)] p-3 flex items-center justify-center gap-2 neo-label-sm text-[var(--neo-text-muted)] font-bold transition-all"
-                      >
-                        <Plus size={14} />
-                        Add New Task
-                      </button>
+                      {isProjectManager && (
+                        <button
+                          onClick={() => handleOpenCreateTask(project.id)}
+                          className="neo-surface border-2 border-dashed border-[var(--neo-border)] hover:bg-[var(--neo-surface-high)] p-3 flex items-center justify-center gap-2 neo-label-sm text-[var(--neo-text-muted)] font-bold transition-all"
+                        >
+                          <Plus size={14} />
+                          Add New Task
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -389,14 +401,16 @@ export default function Projects() {
                     {getStatusLabel(project.status)}
                   </span>
                   <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteProject(project.id, project.title)}
-                      className="neo-icon-btn neo-radius-none p-2 text-[var(--neo-text)] hover:text-white hover:bg-[var(--neo-red)]"
-                      aria-label={`Delete ${project.title}`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    {isProjectManager && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProject(project.id, project.title)}
+                        className="neo-icon-btn neo-radius-none p-2 text-[var(--neo-text)] hover:text-white hover:bg-[var(--neo-red)]"
+                        aria-label={`Delete ${project.title}`}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
                 <h3 className="neo-title-md mb-2">{project.title}</h3>
@@ -443,13 +457,15 @@ export default function Projects() {
                     )}
                   </button>
                 ) : (
-                  <button
-                    onClick={() => handleOpenCreateTask(project.id)}
-                    className="w-full py-2 px-3 mt-4 border-2 border-dashed border-[var(--neo-border)] flex items-center justify-center gap-2 neo-label-sm hover:bg-[var(--neo-surface-muted)] transition-colors"
-                  >
-                    <Plus size={14} />
-                    Add First Task
-                  </button>
+                  isProjectManager && (
+                    <button
+                      onClick={() => handleOpenCreateTask(project.id)}
+                      className="w-full py-2 px-3 mt-4 border-2 border-dashed border-[var(--neo-border)] flex items-center justify-center gap-2 neo-label-sm hover:bg-[var(--neo-surface-muted)] transition-colors"
+                    >
+                      <Plus size={14} />
+                      Add First Task
+                    </button>
+                  )
                 )}
 
                 {/* Expanded Tasks List */}
@@ -487,13 +503,15 @@ export default function Projects() {
                         </div>
                       </div>
                     ))}
-                    <button
-                      onClick={() => handleOpenCreateTask(project.id)}
-                      className="w-full py-1.5 border border-dashed border-[var(--neo-border)] hover:bg-[var(--neo-surface-muted)] flex items-center justify-center gap-1.5 neo-label-sm text-[var(--neo-text-muted)] font-bold transition-all"
-                    >
-                      <Plus size={12} />
-                      Add Task
-                    </button>
+                    {isProjectManager && (
+                      <button
+                        onClick={() => handleOpenCreateTask(project.id)}
+                        className="w-full py-1.5 border border-dashed border-[var(--neo-border)] hover:bg-[var(--neo-surface-muted)] flex items-center justify-center gap-1.5 neo-label-sm text-[var(--neo-text-muted)] font-bold transition-all"
+                      >
+                        <Plus size={12} />
+                        Add Task
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -502,12 +520,14 @@ export default function Projects() {
                 <div className="w-8 h-8 neo-border bg-[var(--neo-yellow)] flex items-center justify-center">
                   <span className="neo-label-sm">{project.owner?.username?.[0]?.toUpperCase() || 'U'}</span>
                 </div>
-                <button 
-                  onClick={() => setEditingProject(project)}
-                  className="neo-label-md underline hover:text-[var(--neo-blue)] transition-colors"
-                >
-                  Manage Project
-                </button>
+                {isProjectManager && (
+                  <button 
+                    onClick={() => setEditingProject(project)}
+                    className="neo-label-md underline hover:text-[var(--neo-blue)] transition-colors"
+                  >
+                    Manage Project
+                  </button>
+                )}
               </div>
             </div>
           );
