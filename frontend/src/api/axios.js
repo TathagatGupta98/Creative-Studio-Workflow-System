@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const apiBaseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://localhost:8000'
+const apiBaseUrl = import.meta.env.VITE_API_URL?.replace(/\/$/, '') || 'http://127.0.0.1:8000'
 const normalizedBaseUrl = apiBaseUrl.endsWith('/api') ? apiBaseUrl : `${apiBaseUrl}/api`
 
 const api = axios.create({
@@ -11,7 +11,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const publicPaths = ['/auth/login/', '/auth/refresh/', '/users/register/']
+  const publicPaths = ['/auth/login/', '/auth/refresh/', '/auth/google/', '/users/register/']
   const requestUrl = config.url || ''
   const isPublic = publicPaths.some((path) => requestUrl.startsWith(path))
   const token = localStorage.getItem('access_token')

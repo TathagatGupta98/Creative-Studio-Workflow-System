@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { ShieldCheck } from 'lucide-react';
 import BrandMark from '../components/BrandMark';
 
 export default function Login() {
-  const { login, register } = useAuth();
+  const { login, googleLogin, register } = useAuth();
   const [mode, setMode] = useState('login');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -15,8 +15,80 @@ export default function Login() {
   const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const googleButtonRef = useRef(null);
 
   const isSignUp = mode === 'signup';
+
+  useEffect(() => {
+    if (isSignUp) {
+      return undefined;
+    }
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+
+    if (!clientId || !googleButtonRef.current) {
+      return undefined;
+    }
+
+    const initializeGoogleButton = () => {
+      if (!window.google?.accounts?.id || !googleButtonRef.current) {
+        return;
+      }
+
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        callback: async ({ credential }) => {
+          if (!credential) {
+            setError('Google sign-in did not return a token.');
+            return;
+          }
+
+          setError('');
+          setLoading(true);
+          try {
+            await googleLogin(credential);
+          } catch {
+            setError('Google sign-in failed. Please try again.');
+          } finally {
+            setLoading(false);
+          }
+        },
+      });
+
+      googleButtonRef.current.innerHTML = '';
+      window.google.accounts.id.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        width: 320,
+      });
+    };
+
+    if (window.google?.accounts?.id) {
+      initializeGoogleButton();
+      return undefined;
+    }
+
+    const existingScript = document.querySelector('script[data-google-gis="true"]');
+
+    if (existingScript) {
+      existingScript.addEventListener('load', initializeGoogleButton, { once: true });
+      return undefined;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleGis = 'true';
+    script.addEventListener('load', initializeGoogleButton, { once: true });
+    document.body.appendChild(script);
+
+    return () => {
+      script.removeEventListener('load', initializeGoogleButton);
+    };
+  }, [isSignUp, googleLogin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -97,6 +169,17 @@ export default function Login() {
             Create Account
           </button>
         </div>
+
+        {!isSignUp && (
+          <div className="mb-6 space-y-3">
+            <div ref={googleButtonRef} />
+            <div className="flex items-center gap-3 text-[var(--neo-text-muted)]">
+              <div className="h-px flex-1 bg-[var(--neo-border)]" />
+              <span className="neo-label-sm uppercase tracking-[0.2em]">or</span>
+              <div className="h-px flex-1 bg-[var(--neo-border)]" />
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {isSignUp && (
@@ -207,6 +290,8 @@ export default function Login() {
           </button>
         </form>
 
+        
+
         <p className="text-center mt-8 neo-body-md text-[var(--neo-text-muted)]">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
@@ -224,4 +309,5 @@ export default function Login() {
     </div>
   );
 }
+
 

@@ -31,6 +31,11 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 # Application definition
 
+GOOGLE_CLIENT_ID = os.environ.get(
+    'GOOGLE_CLIENT_ID',
+    '947040357650-filvlp0k7g3dfhgibhamltvpkhaptgbn.apps.googleusercontent.com',
+)
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
