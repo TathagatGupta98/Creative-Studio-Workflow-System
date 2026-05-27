@@ -29,13 +29,26 @@ export function AuthProvider({ children }) {
 
   const login = async (username, password) => {
     const response = await api.post('/auth/login/', { username, password })
-    const { access, refresh } = response.data
+    await completeSession(response.data)
+  }
+
+  const googleLogin = async (idToken) => {
+    const response = await api.post('/auth/google/', { id_token: idToken })
+    await completeSession(response.data)
+  }
+
+  const completeSession = async (authData) => {
+    const { access, refresh, user: authenticatedUser } = authData
 
     localStorage.setItem('access_token', access)
     localStorage.setItem('refresh_token', refresh)
 
-    const meResponse = await api.get('/users/me/')
-    setUser(meResponse.data)
+    if (authenticatedUser) {
+      setUser(authenticatedUser)
+    } else {
+      const meResponse = await api.get('/users/me/')
+      setUser(meResponse.data)
+    }
 
     navigate('/dashboard')
   }
@@ -53,7 +66,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, login, logout, register, loading }}>
+    <AuthContext.Provider value={{ user, setUser, login, googleLogin, logout, register, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   )
