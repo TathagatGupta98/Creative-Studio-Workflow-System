@@ -11,7 +11,8 @@ import {
   Menu,
   X,
   Settings,
-  Compass
+  Compass,
+  Calendar
 } from 'lucide-react';
 import { useState } from 'react';
 import NeoSelect from './NeoSelect';
@@ -25,6 +26,7 @@ export default function Layout({ children }) {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Projects', href: '/projects', icon: FolderKanban },
     { name: 'Tasks', href: '/tasks', icon: CheckSquare },
+    { name: 'Calendar', href: '/calendar', icon: Calendar },
     { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Discover', href: '/discover', icon: Compass },
   ];
