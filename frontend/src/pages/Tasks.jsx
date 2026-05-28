@@ -19,6 +19,7 @@ import CreateTaskModal from '../components/CreateTaskModal';
 
 export default function Tasks() {
   const { user: currentUser } = useAuth();
+  const isLeadOrAdmin = currentUser?.role === 'STUDIO_ADMIN' || currentUser?.role === 'PROJECT_LEAD' || currentUser?.current_studio === currentUser?.personal_workspace;
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,13 +135,15 @@ export default function Tasks() {
             <Search size={16} />
             Search
           </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="neo-btn neo-btn-secondary neo-radius-none px-4 py-2 flex items-center gap-2"
-          >
-            <Plus size={18} />
-            New Task
-          </button>
+          {isLeadOrAdmin && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="neo-btn neo-btn-secondary neo-radius-none px-4 py-2 flex items-center gap-2"
+            >
+              <Plus size={18} />
+              New Task
+            </button>
+          )}
         </div>
       </div>
 

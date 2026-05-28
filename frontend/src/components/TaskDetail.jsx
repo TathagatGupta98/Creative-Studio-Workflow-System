@@ -8,8 +8,11 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import NeoSelect from './NeoSelect';
+import { useAuth } from '../context/AuthContext';
 
 export default function TaskDetail({ taskId, onClose, onUpdate }) {
+  const { user: currentUser } = useAuth();
+  const isClientViewer = currentUser?.role === 'CLIENT_VIEWER';
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -242,11 +245,17 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
             <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">
                 <span className="neo-label-md text-[var(--neo-text-muted)]">Status</span>
-                <NeoSelect
-                   value={task.status}
-                   onChange={(e) => handleStatusChange(e.target.value)}
-                   options={statusOptions}
-                />
+                {isClientViewer ? (
+                  <div className="w-full neo-input neo-radius-none bg-[var(--neo-surface-muted)] text-[var(--neo-text-muted)] font-bold select-none cursor-not-allowed">
+                    {statusOptions.find(opt => opt.value === task.status)?.label || task.status}
+                  </div>
+                ) : (
+                  <NeoSelect
+                     value={task.status}
+                     onChange={(e) => handleStatusChange(e.target.value)}
+                     options={statusOptions}
+                  />
+                )}
               </div>
 
               <div className="neo-surface neo-border-thick neo-shadow p-4 space-y-3">
@@ -288,21 +297,23 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                     <span className="neo-label-sm text-[var(--neo-text-muted)]">None</span>
                   )}
                 </div>
-                <form onSubmit={handleAddTags} className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={tagInput}
-                      onChange={(e) => setTagInput(e.target.value)}
-                      placeholder="Add tags (comma separated)"
-                      className="neo-input neo-radius-none flex-1"
-                    />
-                    <button type="submit" className="neo-btn neo-btn-secondary neo-radius-none px-3 py-2">
-                      Add
-                    </button>
-                  </div>
-                  {tagError && <span className="neo-label-sm text-[var(--neo-red)]">{tagError}</span>}
-                </form>
+                {!isClientViewer && (
+                  <form onSubmit={handleAddTags} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        placeholder="Add tags (comma separated)"
+                        className="neo-input neo-radius-none flex-1"
+                      />
+                      <button type="submit" className="neo-btn neo-btn-secondary neo-radius-none px-3 py-2">
+                        Add
+                      </button>
+                    </div>
+                    {tagError && <span className="neo-label-sm text-[var(--neo-red)]">{tagError}</span>}
+                  </form>
+                )}
               </div>
             </section>
 
@@ -329,30 +340,32 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                       </div>
                     </a>
                   ))}
-                  <form onSubmit={handleAddAttachment} className="neo-border neo-border-dashed p-3 space-y-3 bg-[var(--neo-surface)]">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        value={attachmentName}
-                        onChange={(e) => setAttachmentName(e.target.value)}
-                        placeholder="Attachment name"
-                        className="neo-input neo-radius-none"
-                      />
-                      <input
-                        type="url"
-                        value={attachmentUrl}
-                        onChange={(e) => setAttachmentUrl(e.target.value)}
-                        placeholder="https://..."
-                        className="neo-input neo-radius-none"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <button type="submit" className="neo-btn neo-btn-secondary neo-radius-none px-3 py-2">
-                        Add attachment
-                      </button>
-                      {attachmentError && <span className="neo-label-sm text-[var(--neo-red)]">{attachmentError}</span>}
-                    </div>
-                  </form>
+                  {!isClientViewer && (
+                    <form onSubmit={handleAddAttachment} className="neo-border neo-border-dashed p-3 space-y-3 bg-[var(--neo-surface)]">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          value={attachmentName}
+                          onChange={(e) => setAttachmentName(e.target.value)}
+                          placeholder="Attachment name"
+                          className="neo-input neo-radius-none"
+                        />
+                        <input
+                          type="url"
+                          value={attachmentUrl}
+                          onChange={(e) => setAttachmentUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="neo-input neo-radius-none"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <button type="submit" className="neo-btn neo-btn-secondary neo-radius-none px-3 py-2">
+                          Add attachment
+                        </button>
+                        {attachmentError && <span className="neo-label-sm text-[var(--neo-red)]">{attachmentError}</span>}
+                      </div>
+                    </form>
+                  )}
                 </div>
               </div>
 
@@ -362,36 +375,42 @@ export default function TaskDetail({ taskId, onClose, onUpdate }) {
                   Activity
                 </h3>
                 <div className="space-y-6">
-                  <form onSubmit={handleAddComment} className="relative">
-                    {replyTo && (
-                      <div className="mb-2 flex items-center justify-between bg-[var(--neo-surface-muted)] neo-border p-2 text-[10px]">
-                        <span className="font-bold">Replying to {replyTo.author_username}</span>
-                        <button 
-                          type="button" 
-                          onClick={() => setReplyTo(null)}
-                          className="neo-icon-btn p-1"
+                  {!isClientViewer ? (
+                    <form onSubmit={handleAddComment} className="relative">
+                      {replyTo && (
+                        <div className="mb-2 flex items-center justify-between bg-[var(--neo-surface-muted)] neo-border p-2 text-[10px]">
+                          <span className="font-bold">Replying to {replyTo.author_username}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setReplyTo(null)}
+                            className="neo-icon-btn p-1"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      )}
+                      <textarea
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder={replyTo ? `Reply to ${replyTo.author_username}...` : "Write a comment..."}
+                        className="neo-input neo-radius-none w-full min-h-[100px] resize-none bg-[var(--neo-surface-muted)]"
+                      />
+                      <div className="absolute bottom-3 right-3">
+                        <button
+                          type="submit"
+                          disabled={!newComment.trim()}
+                          className="neo-btn neo-btn-secondary neo-radius-none p-2 disabled:opacity-50"
+                          aria-label="Send comment"
                         >
-                          <X size={12} />
+                          <Send size={16} />
                         </button>
                       </div>
-                    )}
-                    <textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder={replyTo ? `Reply to ${replyTo.author_username}...` : "Write a comment..."}
-                      className="neo-input neo-radius-none w-full min-h-[100px] resize-none bg-[var(--neo-surface-muted)]"
-                    />
-                    <div className="absolute bottom-3 right-3">
-                      <button
-                        type="submit"
-                        disabled={!newComment.trim()}
-                        className="neo-btn neo-btn-secondary neo-radius-none p-2 disabled:opacity-50"
-                        aria-label="Send comment"
-                      >
-                        <Send size={16} />
-                      </button>
+                    </form>
+                  ) : (
+                    <div className="p-3 bg-[var(--neo-surface-muted)] neo-border text-center text-[var(--neo-text-muted)] neo-label-sm font-bold">
+                      Commenting is disabled for Client Viewers.
                     </div>
-                  </form>
+                  )}
 
                   <div className="space-y-4 pb-4 max-h-[500px] overflow-y-auto pr-2">
                     {task.comments?.length > 0 ? (

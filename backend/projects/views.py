@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from .models import Project, Task, Comment, Attachment, Notification
 from .filters import TaskFilter
 from .serializers import ProjectSerializer, TaskSerializer, CommentSerializer, AttachmentSerializer, NotificationSerializer
+from .permissions import IsStudioAdminOrLead, HasStudioWriteAccess
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
@@ -27,6 +28,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(
             Q(owner=user) | Q(members=user)
         ).distinct()
+
+    def get_permissions(self):
+        if self.action in ['create', 'destroy']:
+            return [permissions.IsAuthenticated(), IsStudioAdminOrLead()]
+        elif self.action in ['update', 'partial_update']:
+            return [permissions.IsAuthenticated(), HasStudioWriteAccess()]
+        return super().get_permissions()
+
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -76,6 +85,14 @@ class TaskViewSet(viewsets.ModelViewSet):
             Q(project__owner=user) | Q(project__members=user)
         ).distinct()
 
+    def get_permissions(self):
+        if self.action in ['create', 'destroy']:
+            return [permissions.IsAuthenticated(), IsStudioAdminOrLead()]
+        elif self.action in ['update', 'partial_update']:
+            return [permissions.IsAuthenticated(), HasStudioWriteAccess()]
+        return super().get_permissions()
+
+
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
@@ -121,6 +138,12 @@ class CommentViewSet(viewsets.ModelViewSet):
             Q(task__project__owner=user) | Q(task__project__members=user)
         ).distinct()
 
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), HasStudioWriteAccess()]
+        return super().get_permissions()
+
+
 
 class AttachmentViewSet(viewsets.ModelViewSet):
     queryset = Attachment.objects.all()
@@ -138,6 +161,12 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(
             Q(task__project__owner=user) | Q(task__project__members=user)
         ).distinct()
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), HasStudioWriteAccess()]
+        return super().get_permissions()
+
 
 
 class NotificationViewSet(mixins.ListModelMixin,

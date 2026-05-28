@@ -8,6 +8,7 @@ import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import StudioManagement from './pages/StudioManagement';
 import DiscoverStudios from './pages/DiscoverStudios';
+import CalendarView from './pages/CalendarView';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
@@ -90,6 +91,17 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <DiscoverStudios />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CalendarView />
                 </Layout>
               </ProtectedRoute>
             }
