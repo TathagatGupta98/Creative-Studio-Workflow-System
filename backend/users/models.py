@@ -21,6 +21,7 @@ class User(AbstractUser):
     bio = models.TextField(max_length=500, blank=True)
     profile_picture = models.URLField(max_length=500, blank=True, null=True)
     is_public = models.BooleanField(default=True)
+    google_sub = models.CharField(max_length=255, unique=True, null=True, blank=True)
     personal_workspace = models.OneToOneField(Studio, on_delete=models.SET_NULL, null=True, blank=True, related_name='workspace_owner')
     current_studio = models.ForeignKey(Studio, on_delete=models.SET_NULL, null=True, blank=True, related_name='current_users')
 

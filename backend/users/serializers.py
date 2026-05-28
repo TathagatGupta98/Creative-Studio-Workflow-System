@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Studio, StudioMembership, JoinRequest, StudioInvite
+from .services import create_registered_user
 
 User = get_user_model()
 
@@ -18,28 +19,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'password', 'email', 'first_name', 'last_name', 'is_public']
 
     def create(self, validated_data):
-        password = validated_data.pop('password')
-        user = User.objects.create_user(password=password, **validated_data)
-        
-        # Create personal workspace for the user
-        workspace = Studio.objects.create(
-            name=f"{user.username}'s Workspace",
-            code_name=f"{user.username}_workspace",
-            is_public=False,
-            owner=user
-        )
-        user.personal_workspace = workspace
-        user.current_studio = workspace
-        user.save()
-        
-        # Add them as admin to their own workspace
-        StudioMembership.objects.create(
-            user=user,
-            studio=workspace,
-            roles=['STUDIO_ADMIN'],
-            is_admin=True
-        )
-        return user
+        return create_registered_user(validated_data)
 
 class UserListSerializer(serializers.ModelSerializer):
     class Meta:

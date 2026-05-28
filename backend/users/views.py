@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import models
 from rest_framework import generics, viewsets, permissions, status
@@ -5,6 +6,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
+from rest_framework_simplejwt.tokens import RefreshToken
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from .serializers import (
     UserSerializer, 
     RegisterSerializer, 
@@ -15,6 +19,7 @@ from .serializers import (
     StudioMembershipSerializer
 )
 from .models import Studio, JoinRequest, StudioMembership, StudioInvite
+from .services import upsert_google_user
 from projects.models import Notification
 
 User = get_user_model()
@@ -216,6 +221,40 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
     permission_classes = [AllowAny]
     authentication_classes = []
+
+
+class GoogleAuthView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request):
+        id_token_value = request.data.get('id_token') or request.data.get('credential')
+        if not id_token_value:
+            return Response({'error': 'Missing Google ID token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            google_profile = google_id_token.verify_oauth2_token(
+                id_token_value,
+                google_requests.Request(),
+                settings.GOOGLE_CLIENT_ID,
+            )
+        except ValueError:
+            return Response({'error': 'Invalid Google ID token.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not google_profile.get('email_verified'):
+            return Response({'error': 'Google email is not verified.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = upsert_google_user(google_profile)
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': UserSerializer(user, context={'request': request}).data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 class UserListView(generics.ListAPIView):
     serializer_class = UserListSerializer
