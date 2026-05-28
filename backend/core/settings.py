@@ -25,15 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-ae&(k5l2_#4rao3dr^igf3#npsvq$r6a37w_!i$v&6_&3wtq)0')
+SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ['DEBUG'] == 'True'
 
 # Application definition
 
-GOOGLE_CLIENT_ID = os.environ.get(
-    'GOOGLE_CLIENT_ID'
-)
+GOOGLE_CLIENT_ID = os.environ['GOOGLE_CLIENT_ID']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -94,7 +92,7 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='sqlite:///db.sqlite3',
+        default=os.environ['DATABASE_URL'],
         conn_max_age=600
     )
 }
