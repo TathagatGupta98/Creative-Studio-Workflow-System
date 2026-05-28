@@ -3,7 +3,8 @@ from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
 from rest_framework import status
 from .models import Project, Task, Tag, Comment, Attachment, Notification
-from users.models import Studio
+from users.models import Studio, StudioMembership
+from users.serializers import UserSerializer
 
 User = get_user_model()
 
@@ -19,26 +20,40 @@ class ModelTests(TestCase):
         self.admin_user = User.objects.create_user(
             username="admin_user",
             password="password123",
-            role="STUDIO_ADMIN",
-            studio=self.studio
         )
+        StudioMembership.objects.create(
+            user=self.admin_user,
+            studio=self.studio,
+            roles=["STUDIO_ADMIN"],
+            is_admin=True
+        )
+        self.admin_user.current_studio = self.studio
+        self.admin_user.save()
         
         # Create a Designer
         self.designer = User.objects.create_user(
             username="designer_user",
             password="password123",
-            role="DESIGNER",
-            studio=self.studio
         )
+        StudioMembership.objects.create(
+            user=self.designer,
+            studio=self.studio,
+            roles=["DESIGNER"],
+            is_admin=False
+        )
+        self.designer.current_studio = self.studio
+        self.designer.save()
 
     def test_studio_creation(self):
         self.assertEqual(self.studio.name, "Alpha Studio")
-        self.assertEqual(self.studio.members.count(), 2)
+        self.assertEqual(self.studio.memberships.count(), 2)
 
     def test_user_roles(self):
-        self.assertEqual(self.admin_user.role, "STUDIO_ADMIN")
-        self.assertEqual(self.designer.role, "DESIGNER")
-        self.assertEqual(self.admin_user.studio, self.studio)
+        admin_serializer = UserSerializer(self.admin_user)
+        designer_serializer = UserSerializer(self.designer)
+        self.assertEqual(admin_serializer.data['role'], "STUDIO_ADMIN")
+        self.assertEqual(designer_serializer.data['role'], "DESIGNER")
+        self.assertEqual(self.admin_user.current_studio, self.studio)
 
     def test_project_creation(self):
         project = Project.objects.create(
@@ -117,8 +132,25 @@ class StudioAPITests(APITestCase):
         self.studio1 = Studio.objects.create(name="Studio 1")
         self.studio2 = Studio.objects.create(name="Studio 2")
         
-        self.user1 = User.objects.create_user(username="u1", password="p1", studio=self.studio1)
-        self.user2 = User.objects.create_user(username="u2", password="p2", studio=self.studio2)
+        self.user1 = User.objects.create_user(username="u1", password="p1")
+        StudioMembership.objects.create(
+            user=self.user1,
+            studio=self.studio1,
+            roles=["STUDIO_ADMIN"],
+            is_admin=True
+        )
+        self.user1.current_studio = self.studio1
+        self.user1.save()
+
+        self.user2 = User.objects.create_user(username="u2", password="p2")
+        StudioMembership.objects.create(
+            user=self.user2,
+            studio=self.studio2,
+            roles=["STUDIO_ADMIN"],
+            is_admin=True
+        )
+        self.user2.current_studio = self.studio2
+        self.user2.save()
         
         self.project1 = Project.objects.create(title="S1 Project", owner=self.user1, studio=self.studio1)
         self.project2 = Project.objects.create(title="S2 Project", owner=self.user2, studio=self.studio2)
@@ -140,7 +172,16 @@ class StudioAPITests(APITestCase):
 class CommentThreadingTests(APITestCase):
     def setUp(self):
         self.studio = Studio.objects.create(name="Studio 1")
-        self.user = User.objects.create_user(username="u1", password="p1", studio=self.studio)
+        self.user = User.objects.create_user(username="u1", password="p1")
+        StudioMembership.objects.create(
+            user=self.user,
+            studio=self.studio,
+            roles=["STUDIO_ADMIN"],
+            is_admin=True
+        )
+        self.user.current_studio = self.studio
+        self.user.save()
+
         self.project = Project.objects.create(title="P1", owner=self.user, studio=self.studio)
         self.task = Task.objects.create(project=self.project, title="T1")
         self.client.force_authenticate(user=self.user)
@@ -180,7 +221,15 @@ class CommentThreadingTests(APITestCase):
 
     def test_notification_on_reply(self):
         # Create another user to reply to
-        other_user = User.objects.create_user(username="u2", password="p2", studio=self.studio)
+        other_user = User.objects.create_user(username="u2", password="p2")
+        StudioMembership.objects.create(
+            user=other_user,
+            studio=self.studio,
+            roles=["DESIGNER"],
+            is_admin=False
+        )
+        other_user.current_studio = self.studio
+        other_user.save()
         
         # u1 creates a comment
         comment = Comment.objects.create(task=self.task, author=self.user, content="Original")
