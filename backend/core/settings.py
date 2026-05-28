@@ -11,14 +11,30 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 import dj_database_url
+from pathlib import Path
+
+
+def _load_local_env_file(env_file_path):
+    if not env_file_path.exists():
+        return
+
+    for raw_line in env_file_path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+
+        key, value = line.split('=', 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        os.environ.setdefault(key, value)
 
 # Allow Render to host the app
 ALLOWED_HOSTS = ['*']
 
-from pathlib import Path
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+_load_local_env_file(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
